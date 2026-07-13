@@ -14,6 +14,7 @@ import Footer from "./components/Footer";
 import { CookieBanner, PrivacyPolicyModal, TermsOfServicesModal } from "./components/LegalModals";
 import { Region } from "./types";
 import { Sparkles, Heart, ChevronRight } from "lucide-react";
+import { Analytics } from "@vercel/analytics/react";
 
 
 export default function App() {
@@ -487,6 +488,9 @@ export default function App() {
         onClose={() => setIsTermsOpen(false)} 
         isLightTheme={isLightTheme} 
       />
+
+      {/* Vercel Web Analytics */}
+      <Analytics />
     </div>
   );
 }
