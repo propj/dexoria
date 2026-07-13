@@ -1,0 +1,22 @@
+{
+  "entities": {
+    "feedback": {
+      "title": "Feedback",
+      "description": "User feedback submitted to the Dexoria Pokédex",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "maxLength": 100 },
+        "email": { "type": "string", "maxLength": 100 },
+        "message": { "type": "string", "maxLength": 5000 },
+        "timestamp": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["name", "message", "timestamp"]
+    }
+  },
+  "firestore": {
+    "feedback/{feedbackId}": {
+      "schema": "feedback",
+      "description": "Feedback collection"
+    }
+  }
+}

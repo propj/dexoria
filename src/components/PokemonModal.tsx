@@ -267,7 +267,9 @@ export default function PokemonModal({
   const typeColor = getPokemonColor(primaryType);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-6 bg-slate-950/85 backdrop-blur-md">
+    <div className={`fixed inset-0 z-50 flex items-center justify-center p-3 md:p-6 backdrop-blur-md transition-all duration-300 ${
+      isLightTheme ? "bg-slate-900/40" : "bg-slate-950/85"
+    }`}>
       {/* Left Navigation Button */}
       <button
         disabled={id <= 1}
@@ -276,7 +278,7 @@ export default function PokemonModal({
           id <= 1
             ? "opacity-10 cursor-not-allowed"
             : isLightTheme
-            ? "bg-white/90 hover:bg-white border-slate-200 text-slate-800 hover:-translate-x-1 hover:scale-105 active:scale-95"
+            ? "bg-white/95 hover:bg-white border-slate-200 text-slate-800 hover:-translate-x-1 hover:scale-105 active:scale-95 shadow-slate-200/50"
             : "bg-slate-900/90 hover:bg-slate-900 border-white/10 text-white hover:-translate-x-1 hover:scale-105 active:scale-95"
         }`}
         title="Previous Pokémon"
@@ -292,7 +294,7 @@ export default function PokemonModal({
           id >= 1025
             ? "opacity-10 cursor-not-allowed"
             : isLightTheme
-            ? "bg-white/90 hover:bg-white border-slate-200 text-slate-800 hover:translate-x-1 hover:scale-105 active:scale-95"
+            ? "bg-white/95 hover:bg-white border-slate-200 text-slate-800 hover:translate-x-1 hover:scale-105 active:scale-95 shadow-slate-200/50"
             : "bg-slate-900/90 hover:bg-slate-900 border-white/10 text-white hover:translate-x-1 hover:scale-105 active:scale-95"
         }`}
         title="Next Pokémon"
@@ -304,9 +306,10 @@ export default function PokemonModal({
         style={
           isLightTheme
             ? {
-                background: `radial-gradient(circle at 30% 30%, ${typeColor}18 0%, #FAF9F6 65%)`,
-                borderColor: `${typeColor}25`,
-                color: "#0F172A",
+                background: `radial-gradient(circle at 10% 10%, ${typeColor}0d 0%, #ffffff 70%)`,
+                borderColor: `${typeColor}35`,
+                color: "#0f172a",
+                boxShadow: "0 25px 50px -12px rgba(51, 65, 85, 0.12)",
               }
             : {
                 background: `radial-gradient(circle at 30% 30%, ${typeColor}24 0%, #0C0D12 60%)`,
@@ -321,7 +324,7 @@ export default function PokemonModal({
           onClick={onClose}
           className={`absolute top-5 right-5 p-2 rounded-xl cursor-pointer transition-all border z-30 ${
             isLightTheme
-              ? "bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700 shadow-sm"
+              ? "bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-600 shadow-sm"
               : "bg-white/5 hover:bg-white/10 border-white/10 text-slate-300"
           }`}
         >
@@ -344,13 +347,15 @@ export default function PokemonModal({
               <button
                 onClick={onClose}
                 className={`p-1.5 rounded-xl cursor-pointer transition-all ${
-                  isLightTheme ? "hover:bg-slate-200/50 text-slate-600" : "hover:bg-white/5 text-slate-300"
+                  isLightTheme ? "hover:bg-slate-100 text-slate-600" : "hover:bg-white/5 text-slate-300"
                 }`}
                 title="Back"
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
-              <span className="font-mono font-black text-xl md:text-2xl text-slate-400 select-none">
+              <span className={`font-mono font-black text-xl md:text-2xl select-none ${
+                isLightTheme ? "text-slate-400/80" : "text-slate-400"
+              }`}>
                 #{detail.id.toString().padStart(4, "0")}
               </span>
             </div>
@@ -368,14 +373,14 @@ export default function PokemonModal({
                   <img
                     src={currentSpriteUrl()}
                     alt={detail.name}
-                    className="w-52 h-52 md:w-68 md:h-68 object-contain relative z-10 filter drop-shadow-[0_15px_30px_rgba(0,0,0,0.22)] transform hover:scale-105 transition-transform duration-300"
+                    className="w-52 h-52 md:w-68 md:h-68 object-contain relative z-10 filter drop-shadow-[0_15px_30px_rgba(0,0,0,0.15)] transform hover:scale-105 transition-transform duration-300"
                     referrerPolicy="no-referrer"
                   />
                 </div>
 
                 {/* Sprites Variant Selector Pill Capsule */}
                 <div className={`flex gap-1 p-1 rounded-2xl border ${
-                  isLightTheme ? "bg-slate-100 border-slate-200" : "bg-white/5 border-white/10"
+                  isLightTheme ? "bg-slate-50 border-slate-200/60" : "bg-white/5 border-white/10"
                 } mt-5`}>
                   <button
                     onClick={() => setActiveSprite("front")}
@@ -383,7 +388,7 @@ export default function PokemonModal({
                       activeSprite === "front"
                         ? "bg-blue-600 text-white shadow-md"
                         : isLightTheme
-                        ? "text-slate-600 hover:bg-slate-200/80"
+                        ? "text-slate-600 hover:bg-slate-100"
                         : "text-slate-300 hover:bg-white/5"
                     }`}
                   >
@@ -395,7 +400,7 @@ export default function PokemonModal({
                       activeSprite === "shiny"
                         ? "bg-amber-500 text-slate-950 font-black shadow-md"
                         : isLightTheme
-                        ? "text-slate-600 hover:bg-slate-200/80"
+                        ? "text-slate-600 hover:bg-slate-100"
                         : "text-slate-300 hover:bg-white/5"
                     }`}
                   >
@@ -409,7 +414,7 @@ export default function PokemonModal({
                         activeSprite === "back"
                           ? "bg-purple-600 text-white shadow-md"
                           : isLightTheme
-                          ? "text-slate-600 hover:bg-slate-200/80"
+                          ? "text-slate-600 hover:bg-slate-100"
                           : "text-slate-300 hover:bg-white/5"
                       }`}
                     >
@@ -423,7 +428,7 @@ export default function PokemonModal({
                   onClick={playCry}
                   className={`mt-4 px-4 py-2 rounded-xl border cursor-pointer text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all ${
                     isLightTheme
-                      ? "bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-800"
+                      ? "bg-slate-50 hover:bg-slate-100 border-slate-200/80 text-slate-800"
                       : "bg-slate-900 border-white/10 text-slate-100 hover:bg-white/5"
                   }`}
                 >
@@ -458,7 +463,7 @@ export default function PokemonModal({
                 {/* Category/Species Name */}
                 {detail.category && (
                   <span className={`text-xs font-black uppercase tracking-widest mt-1.5 block ${
-                    isLightTheme ? "text-slate-500" : "text-slate-400"
+                    isLightTheme ? "text-slate-400 font-bold" : "text-slate-400"
                   }`}>
                     {detail.category}
                   </span>
@@ -479,7 +484,7 @@ export default function PokemonModal({
 
                 {/* Lore description text block */}
                 <p className={`text-sm md:text-base leading-relaxed mt-5 ${
-                  isLightTheme ? "text-slate-700 font-medium" : "text-slate-300"
+                  isLightTheme ? "text-slate-600 font-medium" : "text-slate-300"
                 }`}>
                   {detail.description}
                 </p>
@@ -488,36 +493,36 @@ export default function PokemonModal({
                 <div className="grid grid-cols-2 gap-4 mt-6">
                   <div
                     className={`p-4 rounded-2xl border flex items-center gap-3.5 ${
-                      isLightTheme ? "bg-white border-slate-200/80 shadow-sm" : "bg-white/3 border-white/5"
+                      isLightTheme ? "bg-slate-50/50 border-slate-100 shadow-sm" : "bg-white/3 border-white/5"
                     }`}
                   >
                     <Ruler className="w-5 h-5 text-blue-500 shrink-0" />
                     <div>
                       <span className={`text-[10px] uppercase font-black tracking-wider block ${
-                        isLightTheme ? "text-slate-500" : "text-slate-400"
+                        isLightTheme ? "text-slate-400" : "text-slate-400"
                       }`}>
                         Height
                       </span>
                       <p className={`font-black text-sm md:text-base mt-0.5 ${
-                        isLightTheme ? "text-slate-900" : "text-white"
+                        isLightTheme ? "text-slate-800" : "text-white"
                       }`}>{detail.height / 10} m</p>
                     </div>
                   </div>
 
                   <div
                     className={`p-4 rounded-2xl border flex items-center gap-3.5 ${
-                      isLightTheme ? "bg-white border-slate-200/80 shadow-sm" : "bg-white/3 border-white/5"
+                      isLightTheme ? "bg-slate-50/50 border-slate-100 shadow-sm" : "bg-white/3 border-white/5"
                     }`}
                   >
                     <Scale className="w-5 h-5 text-emerald-500 shrink-0" />
                     <div>
                       <span className={`text-[10px] uppercase font-black tracking-wider block ${
-                        isLightTheme ? "text-slate-500" : "text-slate-400"
+                        isLightTheme ? "text-slate-400" : "text-slate-400"
                       }`}>
                         Weight
                       </span>
                       <p className={`font-black text-sm md:text-base mt-0.5 ${
-                        isLightTheme ? "text-slate-900" : "text-white"
+                        isLightTheme ? "text-slate-800" : "text-white"
                       }`}>{detail.weight / 10} kg</p>
                     </div>
                   </div>
@@ -526,7 +531,7 @@ export default function PokemonModal({
                 {/* Abilities */}
                 <div className="mt-6">
                   <span className={`text-[10px] uppercase font-black tracking-widest block mb-2.5 ${
-                    isLightTheme ? "text-slate-500" : "text-slate-400"
+                    isLightTheme ? "text-slate-400" : "text-slate-400"
                   }`}>
                     Abilities
                   </span>
@@ -538,7 +543,7 @@ export default function PokemonModal({
                           ability.is_hidden
                             ? "border-dashed border-amber-500/50 text-amber-500 bg-amber-500/5"
                             : isLightTheme
-                            ? "bg-white border-slate-200 text-slate-800"
+                            ? "bg-slate-50/50 border-slate-100 text-slate-700"
                             : "bg-white/5 border-white/10 text-slate-200"
                         }`}
                       >
@@ -560,7 +565,7 @@ export default function PokemonModal({
               {/* Base Statistics (Matches video) */}
               <div>
                 <h3 className={`font-display font-black text-lg mb-5 flex items-center gap-2 ${
-                  isLightTheme ? "text-slate-900" : "text-white"
+                  isLightTheme ? "text-slate-800" : "text-white"
                 }`}>
                   <Shield className="w-5 h-5 text-blue-500" />
                   <span>Base Statistics</span>
@@ -570,7 +575,7 @@ export default function PokemonModal({
                   {/* Graphical Radar Chart */}
                   <div className={`w-full sm:w-1/2 flex items-center justify-center p-3 rounded-2xl border ${
                     isLightTheme 
-                      ? "bg-white border-slate-200/80 shadow-sm" 
+                      ? "bg-slate-50/50 border-slate-100 shadow-sm" 
                       : "bg-white/2 border-white/5 shadow-inner"
                   }`}>
                     <RadarChart stats={detail.stats} typeColor={getPokemonColor(detail.types[0])} isLightTheme={isLightTheme} />
@@ -586,13 +591,13 @@ export default function PokemonModal({
                       return (
                         <div key={stat.key} className="grid grid-cols-12 items-center gap-2.5 text-xs">
                           <span className={`col-span-4 font-black text-[10px] uppercase tracking-wider truncate ${
-                            isLightTheme ? "text-slate-600" : "text-slate-400"
+                            isLightTheme ? "text-slate-500" : "text-slate-400"
                           }`}>{stat.label}</span>
                           <div className={`col-span-6 h-2 rounded-full overflow-hidden relative ${
-                            isLightTheme ? "bg-slate-200" : "bg-slate-500/10"
+                            isLightTheme ? "bg-slate-100" : "bg-slate-500/10"
                           }`}>
                             <div
-                              className="h-full rounded-full transition-all duration-1000 shadow-[0_0_8px_rgba(255,255,255,0.05)]"
+                              className="h-full rounded-full transition-all duration-1000"
                               style={{ 
                                 width: `${percentage}%`,
                                 backgroundColor: getPokemonColor(detail.types[0]) // Adjusts beautifully to its color!
@@ -600,7 +605,7 @@ export default function PokemonModal({
                             />
                           </div>
                           <span className={`col-span-2 font-mono font-black text-right text-[11px] ${
-                            isLightTheme ? "text-slate-800" : "text-slate-300"
+                            isLightTheme ? "text-slate-700" : "text-slate-300"
                           }`}>{value}</span>
                         </div>
                       );
@@ -609,7 +614,7 @@ export default function PokemonModal({
                     {/* Total stats sum */}
                     <div className="mt-3 pt-3 border-t border-slate-500/10 flex justify-between items-center text-xs">
                       <span className={`font-black uppercase tracking-widest text-[9px] ${
-                        isLightTheme ? "text-slate-500" : "text-slate-400"
+                        isLightTheme ? "text-slate-400" : "text-slate-400"
                       }`}>Total Stats</span>
                       <span className="font-mono font-black text-xs text-blue-500">
                         {detail.stats.hp + detail.stats.attack + detail.stats.defense + detail.stats.specialAttack + detail.stats.specialDefense + detail.stats.speed}
@@ -622,11 +627,11 @@ export default function PokemonModal({
               {/* Elemental Matchups */}
               <div>
                 <h3 className={`font-display font-black text-lg mb-5 ${
-                  isLightTheme ? "text-slate-900" : "text-white"
+                  isLightTheme ? "text-slate-800" : "text-white"
                 }`}>Tactical Matchups</h3>
                 <div className="flex flex-col gap-4">
                   <div className={`p-4 rounded-2xl border ${
-                    isLightTheme ? "bg-white border-slate-200/80 shadow-sm" : "bg-white/3 border-white/5"
+                    isLightTheme ? "bg-slate-50/50 border-slate-100 shadow-sm" : "bg-white/3 border-white/5"
                   }`}>
                     <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest block mb-2">
                       Effective vs:
@@ -642,13 +647,13 @@ export default function PokemonModal({
                         </span>
                       ))}
                       {detail.strengths.length === 0 && (
-                        <span className="text-slate-500 text-xs italic">None</span>
+                        <span className="text-slate-400 text-xs italic">None</span>
                       )}
                     </div>
                   </div>
 
                   <div className={`p-4 rounded-2xl border ${
-                    isLightTheme ? "bg-white border-slate-200/80 shadow-sm" : "bg-white/3 border-white/5"
+                    isLightTheme ? "bg-slate-50/50 border-slate-100 shadow-sm" : "bg-white/3 border-white/5"
                   }`}>
                     <span className="text-[10px] font-black text-red-500 uppercase tracking-widest block mb-2">
                       Weak against:
@@ -664,7 +669,7 @@ export default function PokemonModal({
                         </span>
                       ))}
                       {detail.weaknesses.length === 0 && (
-                        <span className="text-slate-500 text-xs italic">None</span>
+                        <span className="text-slate-400 text-xs italic">None</span>
                       )}
                     </div>
                   </div>

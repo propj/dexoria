@@ -12,6 +12,7 @@ import FavoritesSection from "./components/FavoritesSection";
 import AboutSection from "./components/AboutSection";
 import Footer from "./components/Footer";
 import LoginModal from "./components/LoginModal";
+import { CookieBanner, PrivacyPolicyModal, TermsOfServicesModal } from "./components/LegalModals";
 import { Region } from "./types";
 import { Sparkles, Heart, ChevronRight } from "lucide-react";
 
@@ -43,6 +44,10 @@ export default function App() {
 
   // Toast System State
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Legal Policies Modals State
+  const [isPrivacyOpen, setIsPrivacyOpen] = useState<boolean>(false);
+  const [isTermsOpen, setIsTermsOpen] = useState<boolean>(false);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -480,7 +485,7 @@ export default function App() {
 
         {activePage === "about" && (
           <div className="py-8">
-            <AboutSection isLightTheme={isLightTheme} />
+            <AboutSection isLightTheme={isLightTheme} currentUser={currentUser} />
           </div>
         )}
 
@@ -508,7 +513,12 @@ export default function App() {
       </main>
 
       {/* Sticky Bottom Footer */}
-      <Footer isLightTheme={isLightTheme} setActivePage={setActivePage} />
+      <Footer 
+        isLightTheme={isLightTheme} 
+        setActivePage={setActivePage} 
+        onOpenPrivacy={() => setIsPrivacyOpen(true)}
+        onOpenTerms={() => setIsTermsOpen(true)}
+      />
 
       {/* Absolute Overlay: Detailed Pokémon Modal */}
       {selectedPokemonId !== null && (
@@ -536,6 +546,27 @@ export default function App() {
         onClose={() => setIsLoginOpen(false)}
         isLightTheme={isLightTheme}
         onLoginSuccess={handleLoginSuccess}
+      />
+
+      {/* Cookies Consent Prompt Banner */}
+      <CookieBanner 
+        isLightTheme={isLightTheme} 
+        onOpenPrivacy={() => setIsPrivacyOpen(true)} 
+        onOpenTerms={() => setIsTermsOpen(true)} 
+      />
+
+      {/* Privacy Policy Modal overlay */}
+      <PrivacyPolicyModal 
+        isOpen={isPrivacyOpen} 
+        onClose={() => setIsPrivacyOpen(false)} 
+        isLightTheme={isLightTheme} 
+      />
+
+      {/* Terms of Services Modal overlay */}
+      <TermsOfServicesModal 
+        isOpen={isTermsOpen} 
+        onClose={() => setIsTermsOpen(false)} 
+        isLightTheme={isLightTheme} 
       />
     </div>
   );

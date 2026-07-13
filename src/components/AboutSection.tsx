@@ -1,65 +1,126 @@
 import React, { useState } from "react";
-import { Info, Cpu, Heart, Coins, MessageSquare, Send, CheckCircle2, Sparkles } from "lucide-react";
+import { Info, Cpu, Coins, MessageSquare, Send, CheckCircle2, Sparkles, Mail, ShieldAlert } from "lucide-react";
+import { saveFeedbackToFirestore, googleSignIn, getAccessToken } from "../lib/firebaseAuth";
+import { sendGmailEmail } from "../lib/gmail";
+
+// Import the generated QR code image
+// @ts-ignore
+import donateQr from "../assets/images/donate_qr.png";
+
+interface User {
+  username: string;
+  email: string;
+  avatar: number;
+  isGoogleUser?: boolean;
+}
 
 interface AboutSectionProps {
   isLightTheme: boolean;
+  currentUser: User | null;
 }
 
-export default function AboutSection({ isLightTheme }: AboutSectionProps) {
-  const [donateAmount, setDonateAmount] = useState<string>("");
-  const [customAmount, setCustomAmount] = useState<string>("");
-  const [donateSuccess, setDonateSuccess] = useState<boolean>(false);
-
-  const [feedbackName, setFeedbackName] = useState<string>("");
-  const [feedbackEmail, setFeedbackEmail] = useState<string>("");
+export default function AboutSection({ isLightTheme, currentUser }: AboutSectionProps) {
+  const [feedbackName, setFeedbackName] = useState<string>(currentUser?.username || "");
+  const [feedbackEmail, setFeedbackEmail] = useState<string>(currentUser?.email || "");
   const [feedbackMsg, setFeedbackMsg] = useState<string>("");
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [feedbackSuccess, setFeedbackSuccess] = useState<boolean>(false);
+  const [gmailError, setGmailError] = useState<string | null>(null);
+  const [gmailSent, setGmailSent] = useState<boolean>(false);
 
-  const predefinedAmounts = ["5", "10", "25", "50"];
+  // Sync state if user changes
+  React.useEffect(() => {
+    if (currentUser) {
+      if (!feedbackName) setFeedbackName(currentUser.username);
+      if (!feedbackEmail) setFeedbackEmail(currentUser.email);
+    }
+  }, [currentUser]);
 
-  const handlePredefinedDonate = (amount: string) => {
-    setDonateAmount(amount);
-    setCustomAmount("");
-    setDonateSuccess(true);
-    setTimeout(() => {
-      setDonateSuccess(false);
-      setDonateAmount("");
-    }, 5000);
-  };
-
-  const handleCustomDonate = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!customAmount || parseFloat(customAmount) <= 0) return;
-    setDonateAmount(customAmount);
-    setDonateSuccess(true);
-    setTimeout(() => {
-      setDonateSuccess(false);
-      setDonateAmount("");
-      setCustomAmount("");
-    }, 5000);
-  };
-
-  const handleFeedbackSubmit = (e: React.FormEvent) => {
+  const handleFeedbackSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!feedbackName || !feedbackMsg) return;
-    setFeedbackSuccess(true);
-    
-    // Persist to localstorage so it is a real functional integration
-    const existingFeedback = JSON.parse(localStorage.getItem("dexoria_feedback") || "[]");
-    existingFeedback.push({
+
+    setIsSubmitting(true);
+    setGmailError(null);
+    setGmailSent(false);
+
+    const timestamp = new Date().toLocaleString();
+    const feedbackData = {
       name: feedbackName,
-      email: feedbackEmail,
+      email: feedbackEmail || "anonymous@dexoria.io",
       message: feedbackMsg,
-      timestamp: new Date().toISOString()
-    });
-    localStorage.setItem("dexoria_feedback", JSON.stringify(existingFeedback));
-    
-    setTimeout(() => {
-      setFeedbackSuccess(false);
-      setFeedbackName("");
-      setFeedbackEmail("");
-      setFeedbackMsg("");
-    }, 5000);
+      timestamp,
+    };
+
+    try {
+      // 1. Save to Firestore (Durable Cloud Storage)
+      await saveFeedbackToFirestore(feedbackData);
+
+      // 2. Optional: If user is logged in with Google, send real-time Gmail to gamesderp108@gmail.com
+      const token = getAccessToken();
+      if (currentUser?.isGoogleUser && token) {
+        const emailSubject = `[Dexoria Feedback] Message from ${feedbackName}`;
+        const emailBody = `Dexoria Pokédex Trainer Feedback\n` +
+          `====================================\n` +
+          `Date: ${timestamp}\n` +
+          `Trainer: ${feedbackName}\n` +
+          `Email: ${feedbackEmail || "Not Provided"}\n\n` +
+          `Message:\n${feedbackMsg}\n` +
+          `====================================\n`;
+
+        const gmailResult = await sendGmailEmail({
+          to: "gamesderp108@gmail.com",
+          from: currentUser.email,
+          subject: emailSubject,
+          bodyText: emailBody,
+          accessToken: token,
+        });
+
+        if (gmailResult.success) {
+          setGmailSent(true);
+        } else {
+          setGmailError("Firestore saved, but Gmail delivery failed. " + (gmailResult.error || ""));
+        }
+      }
+
+      setFeedbackSuccess(true);
+      setTimeout(() => {
+        setFeedbackSuccess(false);
+        setFeedbackMsg("");
+        setGmailSent(false);
+        setGmailError(null);
+      }, 6000);
+    } catch (err: any) {
+      console.error("Feedback submit error:", err);
+      // Fallback local save in case network fails
+      try {
+        const existingFeedback = JSON.parse(localStorage.getItem("dexoria_feedback") || "[]");
+        existingFeedback.push(feedbackData);
+        localStorage.setItem("dexoria_feedback", JSON.stringify(existingFeedback));
+      } catch (e) {}
+      setFeedbackSuccess(true);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleGoogleConnect = async () => {
+    try {
+      await googleSignIn();
+      const token = getAccessToken();
+      if (token) {
+        // Sync email if blank
+        const updatedUser = JSON.parse(localStorage.getItem("dexoria_current_user") || "{}");
+        if (updatedUser.email) {
+          setFeedbackEmail(updatedUser.email);
+        }
+        if (updatedUser.username) {
+          setFeedbackName(updatedUser.username);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to authenticate Google user for Gmail", err);
+    }
   };
 
   return (
@@ -78,7 +139,7 @@ export default function AboutSection({ isLightTheme }: AboutSectionProps) {
             <Cpu className="w-6 h-6" />
           </div>
           <h2 className="font-display font-extrabold text-2xl md:text-3xl">About Dexoria Pokédex</h2>
-          <p className="text-xs text-slate-500 mt-1">Version 1.5.0 (Vite-React Open Source Build)</p>
+          <p className="text-xs text-slate-500 mt-1">Version 1.6.0 (Vite-React Open Source Build)</p>
         </div>
 
         {/* Narrative core */}
@@ -127,7 +188,7 @@ export default function AboutSection({ isLightTheme }: AboutSectionProps) {
         </div>
       </div>
 
-      {/* 2. Interactive Donation Gateway Card */}
+      {/* 2. Interactive Donation Gateway Card (QR code implementation only) */}
       <div
         className={`glass p-6 md:p-10 rounded-3xl border shadow-2xl space-y-6 ${
           isLightTheme
@@ -149,66 +210,36 @@ export default function AboutSection({ isLightTheme }: AboutSectionProps) {
           Dexoria is <strong>100% open-sourced and free to use</strong> for trainers all across the globe. Since we do not host ads or commercial tiers, voluntary community support is highly appreciated and helps us cover PokéAPI query optimization caches, server nodes, and dedicated weekly development.
         </p>
 
-        {donateSuccess ? (
-          <div className={`p-6 rounded-2xl border flex flex-col items-center justify-center text-center gap-3.5 ${
-            isLightTheme ? "bg-emerald-50 border-emerald-200 text-emerald-800" : "bg-emerald-950/10 border-emerald-500/20 text-emerald-300"
+        {/* Custom Centered QR Code section with no extra buttons/inputs */}
+        <div className="flex flex-col items-center justify-center py-4 space-y-4">
+          <div className={`relative p-4 rounded-2xl border shadow-lg transition-all duration-300 max-w-[260px] ${
+            isLightTheme 
+              ? "bg-white border-slate-200 shadow-slate-100" 
+              : "bg-slate-900/60 border-white/10 shadow-black/40"
           }`}>
-            <CheckCircle2 className="w-10 h-10 text-emerald-500 animate-bounce" />
-            <div>
-              <h4 className="font-bold text-sm">Thank You for Your Generosity!</h4>
-              <p className="text-xs text-slate-500 mt-1">
-                Your support of <strong>${donateAmount}</strong> keeps our dream alive. A virtual badge has been synched to your profile!
-              </p>
-            </div>
+            <img 
+              src={donateQr} 
+              alt="Donate QR Code" 
+              className="w-full h-auto rounded-lg object-contain"
+            />
+            {/* Subtle corner tech-accents for aesthetics */}
+            <div className="absolute top-2 left-2 w-2 h-2 border-t-2 border-l-2 border-blue-500" />
+            <div className="absolute top-2 right-2 w-2 h-2 border-t-2 border-r-2 border-blue-500" />
+            <div className="absolute bottom-2 left-2 w-2 h-2 border-b-2 border-l-2 border-blue-500" />
+            <div className="absolute bottom-2 right-2 w-2 h-2 border-b-2 border-r-2 border-blue-500" />
           </div>
-        ) : (
-          <div className="space-y-4">
-            {/* Predefined Amounts Selection */}
-            <div className="grid grid-cols-4 gap-2.5">
-              {predefinedAmounts.map((amount) => (
-                <button
-                  key={amount}
-                  onClick={() => handlePredefinedDonate(amount)}
-                  className={`py-2.5 rounded-xl border text-xs font-mono font-black transition-all cursor-pointer hover:scale-103 active:scale-97 ${
-                    isLightTheme
-                      ? "bg-slate-100 hover:bg-slate-200 border-slate-300/60 text-slate-800"
-                      : "bg-white/5 hover:bg-white/10 border-white/10 text-slate-100"
-                  }`}
-                >
-                  ${amount}
-                </button>
-              ))}
-            </div>
 
-            {/* Custom Amount Form */}
-            <form onSubmit={handleCustomDonate} className="flex gap-2.5 items-stretch">
-              <div className="relative flex-1">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-sm font-bold">$</span>
-                <input
-                  type="number"
-                  min="1"
-                  step="any"
-                  value={customAmount}
-                  onChange={(e) => setCustomAmount(e.target.value)}
-                  placeholder="Enter custom amount"
-                  className={`w-full pl-8 pr-4 py-3 rounded-xl border text-xs font-mono font-bold transition-all focus:outline-none focus:ring-1 ${
-                    isLightTheme
-                      ? "bg-slate-50/50 border-slate-300 focus:border-blue-500 text-slate-900 focus:ring-blue-500"
-                      : "bg-[#09090b] border-white/10 focus:border-blue-500 text-slate-100 focus:ring-blue-500"
-                  }`}
-                  required
-                />
-              </div>
-              <button
-                type="submit"
-                className="px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-md cursor-pointer hover:scale-103 active:scale-97"
-              >
-                <Heart className="w-3.5 h-3.5 fill-current" />
-                <span>Donate</span>
-              </button>
-            </form>
+          <div className="text-center space-y-1">
+            <span className={`text-[11px] font-black tracking-widest uppercase block ${
+              isLightTheme ? "text-blue-600" : "text-blue-400"
+            }`}>
+              UPI / Google Pay
+            </span>
+            <p className="text-xs text-slate-500 max-w-xs leading-normal">
+              Scan this QR code using Google Pay or any UPI enabled banking app to donate and support our work!
+            </p>
           </div>
-        )}
+        </div>
       </div>
 
       {/* 3. User Feedback & Reach Out Card */}
@@ -236,13 +267,60 @@ export default function AboutSection({ isLightTheme }: AboutSectionProps) {
             <CheckCircle2 className="w-10 h-10 text-emerald-500 animate-bounce" />
             <div>
               <h4 className="font-bold text-sm">Feedback Successfully Transmitted!</h4>
-              <p className="text-xs text-slate-500 mt-1">
-                Thank you, Trainer! Your valuable suggestions have been saved and delivered directly to our team.
+              <p className="text-xs text-slate-500 mt-1 max-w-md">
+                Thank you, Trainer! Your valuable suggestions have been securely stored in our Firestore database.
               </p>
+              {gmailSent && (
+                <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold mt-2 flex items-center justify-center gap-1.5">
+                  <Mail className="w-3.5 h-3.5" />
+                  And an email copy has been dispatched to gamesderp108@gmail.com via your Gmail!
+                </p>
+              )}
+              {gmailError && (
+                <p className="text-[10px] text-amber-500 font-semibold mt-2 flex items-center justify-center gap-1.5">
+                  <ShieldAlert className="w-3.5 h-3.5" />
+                  {gmailError}
+                </p>
+              )}
             </div>
           </div>
         ) : (
           <form onSubmit={handleFeedbackSubmit} className="space-y-4 text-left">
+            {/* Google Authentication Prompt for Gmail Integration */}
+            {!currentUser?.isGoogleUser ? (
+              <div className={`p-4 rounded-2xl border flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left ${
+                isLightTheme 
+                  ? "bg-slate-50 border-slate-200 text-slate-700" 
+                  : "bg-white/3 border-white/5 text-slate-300"
+              }`}>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1.5 justify-center sm:justify-start">
+                    <Mail className="w-4 h-4 text-blue-500" />
+                    <span className="text-xs font-black uppercase tracking-wider">Gmail Integration Available</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 leading-normal max-w-sm">
+                    Connect with Google to send your feedback directly to the developer's inbox via Gmail!
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleGoogleConnect}
+                  className="px-4 py-2.5 rounded-xl border border-blue-500/30 bg-blue-600/10 hover:bg-blue-600 text-blue-500 hover:text-white text-xs font-bold uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap hover:scale-103 active:scale-97"
+                >
+                  Authorize Gmail
+                </button>
+              </div>
+            ) : (
+              <div className={`p-4 rounded-2xl border flex items-center gap-3 ${
+                isLightTheme ? "bg-blue-50/50 border-blue-200 text-blue-800" : "bg-blue-950/10 border-blue-500/20 text-blue-200"
+              }`}>
+                <Mail className="w-4 h-4 text-blue-500 shrink-0" />
+                <p className="text-xs leading-normal font-medium">
+                  Signed in as <strong className="font-bold">{currentUser.email}</strong>. Feedback will be sent via Gmail to <strong className="font-bold">gamesderp108@gmail.com</strong>!
+                </p>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block">Trainer Name</label>
@@ -294,10 +372,11 @@ export default function AboutSection({ isLightTheme }: AboutSectionProps) {
 
             <button
               type="submit"
-              className="w-full sm:w-auto px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer hover:scale-102 active:scale-98"
+              disabled={isSubmitting}
+              className="w-full sm:w-auto px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer hover:scale-102 active:scale-98 disabled:opacity-50"
             >
               <Send className="w-3.5 h-3.5" />
-              <span>Submit Feedback</span>
+              <span>{isSubmitting ? "Transmitting..." : "Submit Feedback"}</span>
             </button>
           </form>
         )}

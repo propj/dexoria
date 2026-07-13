@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Moon, Sun, Menu, X, Heart, User as UserIcon, LogOut, Award, Star } from "lucide-react";
+import { Moon, Sun, Menu, X, Heart, User as UserIcon, LogOut, Award, Star, Sparkles } from "lucide-react";
 
 interface User {
   username: string;
@@ -89,29 +89,22 @@ export default function Navbar({
     >
       {/* Brand logo */}
       <div
-        className="flex items-center gap-3 font-display font-bold text-xl md:text-2xl tracking-tight cursor-pointer select-none group"
+        className="flex items-center gap-2.5 font-display tracking-tight cursor-pointer select-none group"
         onClick={() => handleNavClick("home")}
       >
-        <div className={`relative w-8 h-8 rounded-xl flex items-center justify-center border shadow-md transition-all duration-300 ${
+        <div className={`w-8 h-8 rounded-xl flex items-center justify-center border transition-all duration-300 group-hover:scale-105 ${
           isLightTheme 
-            ? "bg-gradient-to-br from-blue-50 to-indigo-50/50 border-slate-200 text-blue-600 shadow-blue-500/5 group-hover:border-blue-300 group-hover:shadow-blue-500/10" 
-            : "bg-gradient-to-br from-slate-900 to-[#12131a] border-white/10 text-blue-400 shadow-indigo-500/10 group-hover:border-blue-500/30 group-hover:shadow-blue-500/20"
+            ? "bg-blue-50 border-blue-200 text-blue-700 shadow-sm shadow-blue-100" 
+            : "bg-blue-500/10 border-blue-500/20 text-blue-400"
         }`}>
-          {/* Futuristic Pokéball geometric lines inside a capsule */}
-          <div className="absolute inset-0.5 rounded-lg border border-dashed border-blue-500/20 animate-spin [animation-duration:30s]" />
-          <div className="relative w-4 h-4 rounded-full border-2 border-current flex items-center justify-center">
-            {/* Horizontal line of Pokéball */}
-            <div className="absolute left-0 right-0 h-0.5 bg-current" />
-            {/* Center button */}
-            <div className={`w-2 h-2 rounded-full border border-current z-10 flex items-center justify-center ${
-              isLightTheme ? "bg-white" : "bg-slate-950"
-            }`}>
-              <div className="w-1 h-1 rounded-full bg-current animate-pulse" />
-            </div>
-          </div>
+          <Sparkles className="w-4 h-4 animate-pulse" />
         </div>
-        <span className="font-display font-black tracking-tight bg-gradient-to-r from-blue-600 via-indigo-500 to-blue-500 bg-clip-text text-transparent">
-          Dex<span className={isLightTheme ? "text-slate-800" : "text-white"}>oria</span>
+        <span className={`font-display font-black text-lg md:text-xl transition-all duration-300 tracking-wider uppercase ${
+          isLightTheme 
+            ? "text-slate-800" 
+            : "text-white"
+        }`}>
+          DEX<span className={`font-medium ${isLightTheme ? "text-blue-600" : "text-blue-400"}`}>oria</span>
         </span>
       </div>
 

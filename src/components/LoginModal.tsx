@@ -1,11 +1,13 @@
 import React, { useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
-import { X, Mail, Lock, User as UserIcon, LogIn, Sparkles, Check } from "lucide-react";
+import { motion } from "motion/react";
+import { X, Mail, Sparkles, Check } from "lucide-react";
+import { googleSignIn } from "../lib/firebaseAuth";
 
 interface User {
   username: string;
   email: string;
   avatar: number; // Pokemon ID for avatar artwork
+  isGoogleUser?: boolean;
 }
 
 interface LoginModalProps {
@@ -15,115 +17,39 @@ interface LoginModalProps {
   onLoginSuccess: (user: User) => void;
 }
 
-const AVATAR_OPTIONS = [25, 1, 4, 7, 133, 151]; // Pikachu, Bulbasaur, Charmander, Squirtle, Eevee, Mew
-
 export default function LoginModal({
   isOpen,
   onClose,
   isLightTheme,
   onLoginSuccess,
 }: LoginModalProps) {
-  const [isRegister, setIsRegister] = useState(false);
-  const [email, setEmail] = useState("");
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [selectedAvatar, setSelectedAvatar] = useState(25);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
-  const getOfficialArtwork = (id: number) => {
-    return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleGoogleLogin = async () => {
     setError(null);
     setSuccess(null);
-
-    if (!email || !password || (isRegister && !username)) {
-      setError("Please fill in all required fields.");
-      return;
-    }
-
-    // Read existing accounts
-    const existingAccountsRaw = localStorage.getItem("dexoria_accounts");
-    let accounts: Array<{ username: string; email: string; pass: string; avatar: number }> = [];
-    if (existingAccountsRaw) {
-      try {
-        accounts = JSON.parse(existingAccountsRaw);
-      } catch (err) {
-        accounts = [];
-      }
-    }
-
-    if (isRegister) {
-      // Check if email already exists
-      const emailExists = accounts.some((acc) => acc.email.toLowerCase() === email.toLowerCase());
-      if (emailExists) {
-        setError("An account with this email already exists.");
-        return;
-      }
-
-      // Create new account
-      const newAccount = {
-        username: username.trim(),
-        email: email.trim().toLowerCase(),
-        pass: password, // In client side demo we store simply
-        avatar: selectedAvatar,
-      };
-
-      accounts.push(newAccount);
-      localStorage.setItem("dexoria_accounts", JSON.stringify(accounts));
-      
-      setSuccess("Account registered successfully! Logging you in...");
-      setTimeout(() => {
-        onLoginSuccess({
-          username: newAccount.username,
-          email: newAccount.email,
-          avatar: newAccount.avatar,
-        });
-        onClose();
-      }, 1500);
-    } else {
-      // Login attempt
-      const found = accounts.find(
-        (acc) => acc.email.toLowerCase() === email.trim().toLowerCase() && acc.pass === password
-      );
-
-      if (found) {
-        setSuccess(`Welcome back, Champion ${found.username}!`);
+    setIsGoogleLoading(true);
+    try {
+      const result = await googleSignIn();
+      if (result) {
+        setSuccess(`Welcome back, ${result.user.displayName || "Trainer"}!`);
         setTimeout(() => {
           onLoginSuccess({
-            username: found.username,
-            email: found.email,
-            avatar: found.avatar,
+            username: result.user.displayName || result.user.email?.split("@")[0] || "Trainer",
+            email: result.user.email || "",
+            avatar: 25,
+            isGoogleUser: true,
           });
           onClose();
         }, 1500);
-      } else {
-        // Fallback: Create dynamic user for quick testing if no accounts exist
-        if (accounts.length === 0 && email.includes("@") && password.length >= 4) {
-          const defaultUser = {
-            username: email.split("@")[0],
-            email: email.trim().toLowerCase(),
-            pass: password,
-            avatar: selectedAvatar,
-          };
-          accounts.push(defaultUser);
-          localStorage.setItem("dexoria_accounts", JSON.stringify(accounts));
-          setSuccess("Guest account auto-created! Logging in...");
-          setTimeout(() => {
-            onLoginSuccess({
-              username: defaultUser.username,
-              email: defaultUser.email,
-              avatar: defaultUser.avatar,
-            });
-            onClose();
-          }, 1500);
-        } else {
-          setError("Invalid email or password combination.");
-        }
       }
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || "Google authentication failed. Please try again.");
+    } finally {
+      setIsGoogleLoading(false);
     }
   };
 
@@ -168,191 +94,80 @@ export default function LoginModal({
         </button>
 
         {/* Modal Title */}
-        <div className="mb-6">
-          <div className="flex items-center gap-2 text-cyan-500 mb-1.5">
-            <Sparkles className="w-4 h-4" />
+        <div className="mb-6 text-center">
+          <div className="flex items-center justify-center gap-2 text-blue-500 mb-2">
+            <Sparkles className="w-4 h-4 text-amber-500" />
             <span className="text-[10px] font-mono font-extrabold tracking-widest uppercase">
-              Secure Core Interface
+              Secure Trainer Linkage
             </span>
           </div>
           <h3 className="font-display font-black text-2xl uppercase tracking-tight">
-            {isRegister ? "Join the Academy" : "Trainer Console"}
+            Trainer Console
           </h3>
-          <p className={`text-xs mt-1 ${isLightTheme ? "text-slate-500" : "text-slate-400"}`}>
-            {isRegister
-              ? "Establish your custom credentials to save your favorites."
-              : "Access your persistent team logs and saved data."}
+          <p className={`text-xs mt-2 max-w-sm mx-auto leading-relaxed ${isLightTheme ? "text-slate-500" : "text-slate-400"}`}>
+            Connect your Gmail / Google Trainer Account to access cloud synchronization, favorites backup, and interactive email notifications directly!
           </p>
         </div>
 
-        {/* Tabs switcher */}
-        <div className={`flex p-1 rounded-2xl border mb-6 ${
-          isLightTheme ? "bg-[#EFEAE2] border-[#E5DDD0]/50" : "bg-[#151516] border-white/5"
-        }`}>
-          <button
-            onClick={() => {
-              setIsRegister(false);
-              setError(null);
-            }}
-            className={`flex-1 py-2 rounded-xl text-xs font-bold uppercase tracking-wider cursor-pointer transition-all ${
-              !isRegister
-                ? isLightTheme
-                  ? "bg-white text-slate-900 shadow-sm border border-slate-200/50"
-                  : "bg-[#242426] text-white shadow-sm border border-white/5"
-                : "text-slate-400 hover:text-white"
-            }`}
-          >
-            Sign In
-          </button>
-          <button
-            onClick={() => {
-              setIsRegister(true);
-              setError(null);
-            }}
-            className={`flex-1 py-2 rounded-xl text-xs font-bold uppercase tracking-wider cursor-pointer transition-all ${
-              isRegister
-                ? isLightTheme
-                  ? "bg-white text-slate-900 shadow-sm border border-slate-200/50"
-                  : "bg-[#242426] text-white shadow-sm border border-white/5"
-                : "text-slate-400 hover:text-white"
-            }`}
-          >
-            Register
-          </button>
-        </div>
-
-        {/* Auth form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Notification Feedbacks */}
+        <div className="space-y-4">
           {error && (
-            <div className="p-3 text-xs rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 font-medium">
+            <div className="p-3.5 text-xs rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 font-medium text-center leading-normal">
               {error}
             </div>
           )}
 
           {success && (
-            <div className="p-3 text-xs rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-medium flex items-center gap-1.5">
-              <Check className="w-3.5 h-3.5" />
+            <div className="p-3.5 text-xs rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-medium flex items-center justify-center gap-2">
+              <Check className="w-4 h-4" />
               <span>{success}</span>
             </div>
           )}
 
-          {isRegister && (
-            <div>
-              <label className="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-widest block mb-1.5">
-                Trainer Nickname
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-slate-500">
-                  <UserIcon className="w-4 h-4" />
-                </div>
-                <input
-                  type="text"
-                  placeholder="e.g. Red, Cynthia"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className={`w-full pl-11 pr-4 py-3 text-sm rounded-xl border outline-none font-medium transition-all ${
-                    isLightTheme
-                      ? "bg-white border-[#E5DDD0] focus:border-blue-500 text-slate-900"
-                      : "bg-[#151516] border-white/5 focus:border-cyan-500 text-[#F4F4F5]"
-                  }`}
-                  required
-                />
-              </div>
+          {/* Google/Gmail authenticate trigger card */}
+          <div className={`p-6 rounded-3xl border flex flex-col items-center gap-5 text-center ${
+            isLightTheme ? "bg-slate-50/50 border-[#E5DDD0]/50" : "bg-[#151516] border-white/5"
+          }`}>
+            <div className="w-12 h-12 rounded-2xl bg-blue-500/10 text-blue-500 flex items-center justify-center border border-blue-500/20">
+              <Mail className="w-6 h-6" />
             </div>
-          )}
 
-          <div>
-            <label className="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-widest block mb-1.5">
-              Email Address
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-slate-500">
-                <Mail className="w-4 h-4" />
-              </div>
-              <input
-                type="email"
-                placeholder="trainer@kanto.org"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className={`w-full pl-11 pr-4 py-3 text-sm rounded-xl border outline-none font-medium transition-all ${
-                  isLightTheme
-                    ? "bg-white border-[#E5DDD0] focus:border-blue-500 text-slate-900"
-                    : "bg-[#151516] border-white/5 focus:border-cyan-500 text-[#F4F4F5]"
-                }`}
-                required
-              />
+            <div className="space-y-1">
+              <h4 className="font-bold text-sm">Sign in with Gmail</h4>
+              <p className="text-[11px] text-slate-500 leading-normal max-w-[240px]">
+                Authorize secure access to your Trainer ID and enable local email reporting.
+              </p>
             </div>
+
+            <button
+              type="button"
+              onClick={handleGoogleLogin}
+              disabled={isGoogleLoading}
+              className={`w-full py-3.5 px-5 rounded-2xl text-xs font-bold font-display uppercase tracking-wider cursor-pointer shadow-lg transition-all flex items-center justify-center gap-3 border ${
+                isLightTheme
+                  ? "bg-white hover:bg-slate-50 text-slate-800 border-slate-200/80 hover:border-slate-300"
+                  : "bg-white text-slate-950 border-transparent hover:bg-slate-100 font-black"
+              } disabled:opacity-50`}
+            >
+              {isGoogleLoading ? (
+                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l3.66-2.85z" fill="#FBBC05" />
+                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.85c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+                </svg>
+              )}
+              <span>{isGoogleLoading ? "Connecting..." : "Continue with Google"}</span>
+            </button>
           </div>
+        </div>
 
-          <div>
-            <label className="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-widest block mb-1.5">
-              Security Key (Password)
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-slate-500">
-                <Lock className="w-4 h-4" />
-              </div>
-              <input
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className={`w-full pl-11 pr-4 py-3 text-sm rounded-xl border outline-none font-medium transition-all ${
-                  isLightTheme
-                    ? "bg-white border-[#E5DDD0] focus:border-blue-500 text-slate-900"
-                    : "bg-[#151516] border-white/5 focus:border-cyan-500 text-[#F4F4F5]"
-                }`}
-                required
-              />
-            </div>
-          </div>
-
-          {/* Avatar selector (Only when registering) */}
-          {isRegister && (
-            <div className="pt-2">
-              <label className="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-widest block mb-2">
-                Choose Partner Pokémon Companion
-              </label>
-              <div className="grid grid-cols-6 gap-2">
-                {AVATAR_OPTIONS.map((id) => (
-                  <button
-                    type="button"
-                    key={id}
-                    onClick={() => setSelectedAvatar(id)}
-                    className={`aspect-square p-1 rounded-xl border transition-all cursor-pointer flex items-center justify-center ${
-                      selectedAvatar === id
-                        ? isLightTheme
-                          ? "bg-blue-600/10 border-blue-500 scale-105"
-                          : "bg-cyan-500/20 border-cyan-400 scale-105"
-                        : isLightTheme
-                        ? "bg-slate-50 border-slate-200 hover:bg-slate-100"
-                        : "bg-white/3 border-white/5 hover:bg-white/5"
-                    }`}
-                  >
-                    <img
-                      src={getOfficialArtwork(id)}
-                      alt="avatar option"
-                      className="w-10 h-10 object-contain"
-                    />
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Action button */}
-          <button
-            type="submit"
-            className={`w-full py-3.5 rounded-xl text-xs font-bold font-display uppercase tracking-wider cursor-pointer shadow-lg transition-all mt-6 flex items-center justify-center gap-2 ${
-              isLightTheme
-                ? "bg-blue-600 hover:bg-blue-500 text-white shadow-blue-600/10"
-                : "bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-cyan-500/10 font-black"
-            }`}
-          >
-            <LogIn className="w-4 h-4" />
-            <span>{isRegister ? "Register Credentials" : "Initialize Link"}</span>
-          </button>
-        </form>
+        {/* Security / Privacy notice */}
+        <p className="text-[10px] text-slate-500 text-center mt-6 leading-normal max-w-xs mx-auto">
+          We process auth securely via official Google Firebase servers. Your email is never shared.
+        </p>
       </motion.div>
     </div>
   );

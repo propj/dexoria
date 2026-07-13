@@ -4,9 +4,16 @@ import { Compass, BookOpen, Heart, Info, Globe, Github } from "lucide-react";
 interface FooterProps {
   isLightTheme: boolean;
   setActivePage: (page: string) => void;
+  onOpenPrivacy?: () => void;
+  onOpenTerms?: () => void;
 }
 
-export default function Footer({ isLightTheme, setActivePage }: FooterProps) {
+export default function Footer({ 
+  isLightTheme, 
+  setActivePage, 
+  onOpenPrivacy, 
+  onOpenTerms 
+}: FooterProps) {
   const handleNav = (id: string) => {
     setActivePage(id);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -81,10 +88,26 @@ export default function Footer({ isLightTheme, setActivePage }: FooterProps) {
             href="https://pokeapi.co/"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-left text-slate-500 hover:text-blue-500 transition-colors"
+            className="text-left text-slate-500 hover:text-blue-500 transition-colors mb-1"
           >
             PokéAPI Source
           </a>
+          {onOpenPrivacy && (
+            <button
+              onClick={onOpenPrivacy}
+              className="text-left text-slate-500 hover:text-blue-500 transition-colors cursor-pointer font-medium"
+            >
+              Privacy Policy
+            </button>
+          )}
+          {onOpenTerms && (
+            <button
+              onClick={onOpenTerms}
+              className="text-left text-slate-500 hover:text-blue-500 transition-colors cursor-pointer font-medium"
+            >
+              Terms of Service
+            </button>
+          )}
         </div>
 
         {/* Developer socials info */}
