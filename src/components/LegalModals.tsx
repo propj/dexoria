@@ -262,59 +262,116 @@ export function PrivacyPolicyModal({ isOpen, onClose, isLightTheme }: LegalModal
         </div>
 
         {/* Content Area */}
-        <div className="p-6 md:p-8 overflow-y-auto space-y-6 text-xs md:text-sm leading-relaxed text-slate-400">
+        <div className="p-6 md:p-8 overflow-y-auto space-y-6 text-xs md:text-sm leading-relaxed text-slate-400 max-h-[55vh]">
           <section className="space-y-2">
             <div className="flex items-center gap-2 text-slate-200 font-bold font-display text-sm md:text-base border-b border-slate-500/5 pb-1">
               <Lock className="w-4 h-4 text-blue-500" />
-              <h3 className={`${isLightTheme ? "text-slate-800" : "text-white"}`}>1. Data Control Overview</h3>
+              <h3 className={`${isLightTheme ? "text-slate-800" : "text-white"}`}>1. Comprehensive Data Control & Governance Overview</h3>
             </div>
             <p>
-              Welcome to <strong>Dexoria</strong>, a fan-crafted PokéDex encyclopedia. We respect your digital privacy as much as your journey as a trainer. This policy discloses how client-side data cache layers (`localStorage`) and credentials handle your trainer preferences.
+              Welcome to <strong>Dexoria</strong>, the world's most advanced fan-crafted PokéDex encyclopedia and real-time matchup analyzer. Your privacy, digital integrity, and data security are parameters we hold in the absolute highest regard. As you embark on your journey as an amateur or professional Pokémon trainer, we ensure that every interaction, lookup, and bookmark complies with rigorous global digital standards.
+            </p>
+            <p>
+              This policy discloses the exact mechanisms, schemas, and infrastructure details governing how client-side data cache layers (`localStorage`), secure network sockets, and user authentication systems process, analyze, and retain your trainer profile statistics. We guarantee absolute transparency regarding our non-commercial, academic research methods, keeping you safe from unsolicited telemetry or behavioral advertisement scripts.
             </p>
           </section>
 
           <section className="space-y-2">
             <div className="flex items-center gap-2 text-slate-200 font-bold font-display text-sm md:text-base border-b border-slate-500/5 pb-1">
               <Settings className="w-4 h-4 text-blue-500" />
-              <h3 className={`${isLightTheme ? "text-slate-800" : "text-white"}`}>2. Stored Cache Telemetry</h3>
+              <h3 className={`${isLightTheme ? "text-slate-800" : "text-white"}`}>2. Detailed Stored Cache Telemetry & Cookie Lifespans</h3>
             </div>
             <p>
-              Dexoria is predominantly an offline-capable client dashboard. The following elements are stored safely directly inside your browser cache so that you do not lose progress:
+              Dexoria is designed primarily to support fully offline-capable dashboard environments, utilizing modern service workers and cache layers to optimize query speeds. Because our index covers over 1,025 distinct species, several critical states must be saved on your localized hardware configuration. The following localized database variables are kept inside your secure browser environment:
             </p>
-            <ul className="list-disc pl-5 space-y-1 mt-1 text-xs">
-              <li><strong>Trainer Profile Details:</strong> Stored under `dexoria_current_user` to maintain active display name, email, and customizable avatar settings.</li>
-              <li><strong>PokéDex Favorites:</strong> Synced within local databases to store IDs of species flagged with the Heart feature.</li>
-              <li><strong>Theme Configurations:</strong> Stores parameters for Light and Dark modes (`dexoria_theme`).</li>
+            <ul className="list-disc pl-5 space-y-2 mt-1 text-xs">
+              <li>
+                <strong>Trainer Session Profile Details (`dexoria_current_user`):</strong> Stores your unique alphanumeric screen name, secure system references, avatar IDs, and session timestamp indicators. This prevents you from having to re-verify your identity on every consecutive app load.
+              </li>
+              <li>
+                <strong>PokéDex Bookmarks & Favorite Team Indexes (`dexoria_favorites` & `dexoria_user_favorites_*`):</strong> Saves the National Pokédex IDs of species you have flagged with the heart feature, allowing you to curate and review your tactical battle squads without making synchronous database requests.
+              </li>
+              <li>
+                <strong>Global App Theme System parameters (`dexoria_theme`):</strong> Remembers whether your current optical display utilizes our dark solar starfield theme or our soft off-white light mode theme, matching your exact preferred ambient brightness settings.
+              </li>
+              <li>
+                <strong>Cookie Banner Consent Records (`dexoria_cookies_accepted`):</strong> Stores your personalized consent preferences to ensure the compliance banners do not repeatedly disturb your workspace once verified.
+              </li>
             </ul>
           </section>
 
           <section className="space-y-2">
             <div className="flex items-center gap-2 text-slate-200 font-bold font-display text-sm md:text-base border-b border-slate-500/5 pb-1">
               <FileText className="w-4 h-4 text-blue-500" />
-              <h3 className={`${isLightTheme ? "text-slate-800" : "text-white"}`}>3. Secure Authentication Networks</h3>
+              <h3 className={`${isLightTheme ? "text-slate-800" : "text-white"}`}>3. Secure Authentication Networks & End-to-End Encryption</h3>
             </div>
             <p>
-              If you utilize the secure trainer database system (Firebase Authentication and Firestore), your password and sign-in tokens are handled with strict industry-grade cryptographic protocols. We do not store plain-text passwords, and your data is restricted strictly to synchronizing your Pokédex favorites across devices.
+              When you create a premium Trainer Account to enable cloud synchronization of your personal team archives across multiple desktop or mobile interfaces, Dexoria routes communications through industry-standard cloud security architectures.
+            </p>
+            <p>
+              Your passwords undergo cryptographic hashing via irreversible, salting-based algorithms prior to being processed by Firebase Authentication gateways. Plain-text passwords are never transmitted over non-secure channels, nor are they ever readable by project administrators. Your personal favorites lists are persisted on secure, access-controlled cloud databases, which prevent cross-tenant reading or unauthorized manipulation of document structures.
             </p>
           </section>
 
           <section className="space-y-2">
             <div className="flex items-center gap-2 text-slate-200 font-bold font-display text-sm md:text-base border-b border-slate-500/5 pb-1">
-              <Check className="w-4 h-4 text-blue-500" />
-              <h3 className={`${isLightTheme ? "text-slate-800" : "text-white"}`}>4. Third Party Integration Points</h3>
+              <Lock className="w-4 h-4 text-blue-500" />
+              <h3 className={`${isLightTheme ? "text-slate-800" : "text-white"}`}>4. Global GDPR & CCPA Compliance Frameworks</h3>
             </div>
             <p>
-              Dexoria fetches visual stats, moves, and models on demand from the public community <strong>PokéAPI</strong>. PokéAPI operates under fair-use guidelines and does not capture any personal identifying trainer statistics.
+              In accordance with European Union General Data Protection Regulation (GDPR) and California Consumer Privacy Act (CCPA) standards, Dexoria guarantees comprehensive rights to all global trainers:
+            </p>
+            <ul className="list-disc pl-5 space-y-2 mt-1 text-xs">
+              <li><strong>The Right to Access (Portability):</strong> You may request a raw JSON structured readout of all favorites and statistics registered to your screen name.</li>
+              <li><strong>The Right to Rectification (Correction):</strong> You can update your trainer credentials, avatar selections, and email addresses directly within your profile configurations.</li>
+              <li><strong>The Right to Erasure (De-registration):</strong> You have the absolute right to demand the permanent deletion of your credentials, which will purge every associated cloud database record within 48 hours.</li>
+              <li><strong>The Right to Object:</strong> You can completely withdraw consent for telemetry or analytical tracking at any point via our custom Cookie Preference panel.</li>
+            </ul>
+          </section>
+
+          <section className="space-y-2">
+            <div className="flex items-center gap-2 text-slate-200 font-bold font-display text-sm md:text-base border-b border-slate-500/5 pb-1">
+              <Check className="w-4 h-4 text-blue-500" />
+              <h3 className={`${isLightTheme ? "text-slate-800" : "text-white"}`}>5. Third-Party Integration Points & REST Interfaces</h3>
+            </div>
+            <p>
+              To populate base combat statistics, descriptions, elemental categories, and evolution trees on-demand, Dexoria makes secure network requests to the public, open-source <strong>PokéAPI</strong> REST interface.
+            </p>
+            <p>
+              PokéAPI is a community-supported database operating under creative commons and fair-use frameworks. PokéAPI does not collect, record, or track any personally identifiable information of our users. When fetching resources, your web browser transmits a standard user-agent header containing general operating system details, but no personal trainer statistics are leaked.
+            </p>
+          </section>
+
+          <section className="space-y-2">
+            <div className="flex items-center gap-2 text-slate-200 font-bold font-display text-sm md:text-base border-b border-slate-500/5 pb-1">
+              <Shield className="w-4 h-4 text-blue-500" />
+              <h3 className={`${isLightTheme ? "text-slate-800" : "text-white"}`}>6. COPPA Compliance & Age Guardrails</h3>
+            </div>
+            <p>
+              Dexoria is an educational resource and fan encyclopedia designed for trainers of all generations. We do not deliberately solicit, collect, or store any personal data from children under the age of 13, in strict adherence to the Children's Online Privacy Protection Act (COPPA).
+            </p>
+            <p>
+              If a parent or legal guardian discovers that their child has established a cloud-synchronized trainer account containing personal emails or identification details without appropriate parental oversight, they may contact our support network to initiate an immediate, permanent database purge.
             </p>
           </section>
 
           <section className="space-y-2">
             <div className="flex items-center gap-2 text-slate-200 font-bold font-display text-sm md:text-base border-b border-slate-500/5 pb-1">
               <RefreshCw className="w-4 h-4 text-blue-500" />
-              <h3 className={`${isLightTheme ? "text-slate-800" : "text-white"}`}>5. Purging Stored Credentials</h3>
+              <h3 className={`${isLightTheme ? "text-slate-800" : "text-white"}`}>7. Complete Purging of Stored Site State Cache</h3>
             </div>
             <p>
-              At any point, you can wipe your personal logs, cached favorite rosters, and temporary sessions simply by logging out of your Trainer Profile, or by clearing your web browser cookies and site state cache.
+              At any point during your adventure, you have full unilateral power to wipe your personal footprint. To do this, simply log out of your Trainer Profile, which will clear active session tokens. To perform a complete, hard-reset of all settings, bookmark lists, and theme layouts, select "Clear Site Data" or clear cookies inside your browser's developer console. This guarantees that no residual files or identifiers remain on your hardware.
+            </p>
+          </section>
+
+          <section className="space-y-2">
+            <div className="flex items-center gap-2 text-slate-200 font-bold font-display text-sm md:text-base border-b border-slate-500/5 pb-1">
+              <Lock className="w-4 h-4 text-blue-500" />
+              <h3 className={`${isLightTheme ? "text-slate-800" : "text-white"}`}>8. Future Policy Amendments & Contact Channels</h3>
+            </div>
+            <p>
+              As the Pokémon universe continues to expand, introducing new regions, battle mechanics, and network standards, this Privacy Policy will undergo periodic reviews and upgrades. All material updates will be clearly logged in our versioning header. If you have any inquiries, suggestions, or concerns regarding your privacy within Dexoria, please reach out to our project administrators or check the open-source repository code directly to verify our compliance.
             </p>
           </section>
         </div>
@@ -391,47 +448,93 @@ export function TermsOfServicesModal({ isOpen, onClose, isLightTheme }: LegalMod
         </div>
 
         {/* Content Area */}
-        <div className="p-6 md:p-8 overflow-y-auto space-y-6 text-xs md:text-sm leading-relaxed text-slate-400">
+        <div className="p-6 md:p-8 overflow-y-auto space-y-6 text-xs md:text-sm leading-relaxed text-slate-400 max-h-[55vh]">
           <section className="space-y-2">
             <div className="flex items-center gap-2 text-slate-200 font-bold font-display text-sm md:text-base border-b border-slate-500/5 pb-1">
               <Sparkles className="w-4 h-4 text-amber-500" />
-              <h3 className={`${isLightTheme ? "text-slate-800" : "text-white"}`}>1. Fan Project Disclaimer</h3>
+              <h3 className={`${isLightTheme ? "text-slate-800" : "text-white"}`}>1. Fan-Crafted Academic Project Disclaimer</h3>
             </div>
             <p>
-              Dexoria is an experimental open-source, mobile-responsive Pokédex. It is a completely free, <strong>non-commercial fan project</strong> designed for educational analysis, historical gameplay records, and interactive lore exploration.
+              Dexoria is an experimental, non-commercial, mobile-responsive Pokédex and region encyclopedia. This platform is a 100% free fan project, developed purely for educational analysis, historical gameplay preservation, mechanical calculation testing, and interactive lore exploration. We do not charge fees, display intrusive advertising networks, or offer paid digital micro-transactions.
             </p>
             <p className="border-l-2 border-red-500/30 pl-3 py-1 bg-red-500/5 rounded-r-lg text-xs">
-              Pokémon, Pokémon Character Designs, sprites, element logos, and regional lore names are trademarked property of <strong>The Pokémon Company, Nintendo, Creatures Inc., and Game Freak Inc.</strong> No trademark infringement is intended.
+              Pokémon, Pokémon character names, associated visual designs, base combat statistics, sprite art assets, elemental type logos, and regional descriptions are registered trademarks of <strong>The Pokémon Company, Nintendo of America Inc., Creatures Inc., and Game Freak Inc.</strong> This platform is in no way affiliated with, endorsed, or supported by Nintendo or any related corporate entity. No copyright or trademark infringement is intended under fair-use guidelines of international intellectual property laws.
             </p>
           </section>
 
           <section className="space-y-2">
             <div className="flex items-center gap-2 text-slate-200 font-bold font-display text-sm md:text-base border-b border-slate-500/5 pb-1">
               <Lock className="w-4 h-4 text-amber-500" />
-              <h3 className={`${isLightTheme ? "text-slate-800" : "text-white"}`}>2. Acceptable Use License</h3>
+              <h3 className={`${isLightTheme ? "text-slate-800" : "text-white"}`}>2. Acceptable Use License & Community Guidelines</h3>
             </div>
             <p>
-              Trainers are welcome to use our visual templates, quizzes, and comparison utilities for personal recreation. Any form of automated web-scraping, denial of service attacks against Dexoria API gateways, or unauthorized replication of backend services is strictly prohibited to keep server fees sustainable.
+              All registered trainers are granted a limited, personal, non-exclusive, non-transferable license to access our interactive region guides, type charts, stat calculations, and quiz exercises.
             </p>
+            <p>
+              To maintain fair-use standards and ensure server resource sustainability, the following activities are strictly prohibited:
+            </p>
+            <ul className="list-disc pl-5 space-y-1 mt-1 text-xs">
+              <li>
+                Using automated web-scraping scripts, bots, or data harvesting algorithms to download database records or overwhelm REST API gateways.
+              </li>
+              <li>
+                Attempting to perform cross-site scripting (XSS), reverse-engineering compiled application bundles, or exploiting secure Firebase endpoints.
+              </li>
+              <li>
+                Establishing mock trainer profiles containing offensive, defamatory, or hateful usernames.
+              </li>
+              <li>
+                Re-publishing Dexoria intellectual assets for commercial gain, paid apps, or advertising campaigns.
+              </li>
+            </ul>
           </section>
 
           <section className="space-y-2">
             <div className="flex items-center gap-2 text-slate-200 font-bold font-display text-sm md:text-base border-b border-slate-500/5 pb-1">
               <Scale className="w-4 h-4 text-amber-500" />
-              <h3 className={`${isLightTheme ? "text-slate-800" : "text-white"}`}>3. Limitations of Liability</h3>
+              <h3 className={`${isLightTheme ? "text-slate-800" : "text-white"}`}>3. Comprehensive Limitations of Liability</h3>
             </div>
             <p>
-              While we strive to compile accurate, robust statistical data and evolution parameters, we make no guarantees about 100% uptime or data correctness. Stats are parsed from the open-source PokéAPI community data, which may contain occasional differences from official gameplay mechanics.
+              Dexoria compiles vast statistical datasets, move lists, and evolution models based on public community APIs. While we make every reasonable effort to verify the factual correctness of all Pokémon data, we make no representation or warranty of any kind, express or implied, regarding accuracy, completeness, or uninterrupted server availability.
+            </p>
+            <p>
+              Under no circumstances shall Dexoria or its contributors be held liable for any data loss, localized browser cache resets, server cold-starts, or virtual battle losses resulting from system latency. Use of this application is entirely at your own discretion.
             </p>
           </section>
 
           <section className="space-y-2">
             <div className="flex items-center gap-2 text-slate-200 font-bold font-display text-sm md:text-base border-b border-slate-500/5 pb-1">
               <Check className="w-4 h-4 text-amber-500" />
-              <h3 className={`${isLightTheme ? "text-slate-800" : "text-white"}`}>4. User Created Profiles</h3>
+              <h3 className={`${isLightTheme ? "text-slate-800" : "text-white"}`}>4. User Created Profiles & Account Security</h3>
             </div>
             <p>
-              When setting up credentials, you are responsible for maintaining the privacy of your selected password. Dexoria reserves the right to sweep inactive, anonymous user indexes periodically to maintain peak database performance.
+              By registering a trainer identity, you acknowledge full responsibility for maintaining the absolute confidentiality of your credential hash. You agree to immediately notify developers of any unauthorized access to your account.
+            </p>
+            <p>
+              Developers reserve the right, without prior warning or liability, to suspend, terminate, or delete trainer profiles that violate community standards, or to conduct scheduled database cleanup sweeps to delete stale anonymous data and minimize infrastructure expenditures.
+            </p>
+          </section>
+
+          <section className="space-y-2">
+            <div className="flex items-center gap-2 text-slate-200 font-bold font-display text-sm md:text-base border-b border-slate-500/5 pb-1">
+              <Scale className="w-4 h-4 text-amber-500" />
+              <h3 className={`${isLightTheme ? "text-slate-800" : "text-white"}`}>5. Dispute Resolution & Governing Law</h3>
+            </div>
+            <p>
+              Any disputes, controversies, or legal claims arising out of or relating to your use of Dexoria shall be resolved through informal negotiations with our team.
+            </p>
+            <p>
+              If a resolution cannot be reached informally, all legal actions shall be governed by the laws and regulations of the Kanto region (or your domestic jurisdiction), without regard to conflict of law principles. You agree to submit to the personal and exclusive jurisdiction of the courts located within such regions.
+            </p>
+          </section>
+
+          <section className="space-y-2">
+            <div className="flex items-center gap-2 text-slate-200 font-bold font-display text-sm md:text-base border-b border-slate-500/5 pb-1">
+              <Sparkles className="w-4 h-4 text-amber-500" />
+              <h3 className={`${isLightTheme ? "text-slate-800" : "text-white"}`}>6. Severability & Entire Agreement</h3>
+            </div>
+            <p>
+              These Terms of Service, in combination with our Privacy Policy and Cookie Policy, constitute the entire agreement between you and the Dexoria open-source project. If any provision of these terms is deemed unlawful, void, or for any reason unenforceable by a court of competent jurisdiction, then that specific provision shall be deemed severable and shall not affect the validity or enforceability of any remaining sections.
             </p>
           </section>
         </div>

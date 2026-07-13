@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef } from "react";
 import { 
   ChevronRight, Shield, Award, Users, MapPin, Gamepad2, ArrowLeft, 
   Search, SlidersHorizontal, Info, Swords, Sparkles, Heart 
@@ -250,6 +250,20 @@ export default function RegionSection({
 }: RegionSectionProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedType, setSelectedType] = useState("all");
+
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+
+  const scrollLeft = () => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollBy({ left: -360, behavior: "smooth" });
+    }
+  };
+
+  const scrollRight = () => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollBy({ left: 360, behavior: "smooth" });
+    }
+  };
 
   const getOfficialArtwork = (id: number) => {
     return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
@@ -798,8 +812,68 @@ export default function RegionSection({
   // Horizontal scroll layout
   if (layout === "scroll") {
     return (
-      <div className="relative">
-        <div className="flex gap-6 overflow-x-auto pb-6 px-1 snap-x scroll-smooth">
+      <div className="relative group/carousel">
+        {/* Left Scroll Navigation Button */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            scrollLeft();
+          }}
+          className={`absolute -left-5 top-1/2 -translate-y-1/2 z-25 w-11 h-11 rounded-full border flex items-center justify-center cursor-pointer shadow-lg transition-all duration-200 active:scale-95 ${
+            isLightTheme
+              ? "bg-white border-slate-300 text-slate-700 hover:bg-slate-50 shadow-slate-200"
+              : "bg-slate-950/90 backdrop-blur-xl border-white/10 text-slate-100 hover:bg-slate-900 shadow-black/50"
+          }`}
+          aria-label="Scroll region cards left"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="m15 18-6-6 6-6" />
+          </svg>
+        </button>
+
+        {/* Right Scroll Navigation Button */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            scrollRight();
+          }}
+          className={`absolute -right-5 top-1/2 -translate-y-1/2 z-25 w-11 h-11 rounded-full border flex items-center justify-center cursor-pointer shadow-lg transition-all duration-200 active:scale-95 ${
+            isLightTheme
+              ? "bg-white border-slate-300 text-slate-700 hover:bg-slate-50 shadow-slate-200"
+              : "bg-slate-950/90 backdrop-blur-xl border-white/10 text-slate-100 hover:bg-slate-900 shadow-black/50"
+          }`}
+          aria-label="Scroll region cards right"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="m9 18 6-6-6-6" />
+          </svg>
+        </button>
+
+        {/* Scrollable container */}
+        <div 
+          ref={scrollRef}
+          className="flex gap-6 overflow-x-auto pb-6 px-1 snap-x scroll-smooth scrollbar-none"
+        >
           {REGIONS_DATA.map((region) => {
             const starIds = region.starterIds || [1, 4, 7];
             const starters = region.id === "kanto" ? [1, 4, 7, 25] : starIds;

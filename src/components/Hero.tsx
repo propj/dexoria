@@ -31,17 +31,29 @@ export default function Hero({
   onExploreNational,
   isLightTheme,
 }: HeroProps) {
-  const [legendaryIdx, setLegendaryIdx] = useState(0);
-  const [mythicalIdx, setMythicalIdx] = useState(0);
+  const [legendaryIdx, setLegendaryIdx] = useState(() => Math.floor(Math.random() * LEGENDARY_LIST.length));
+  const [mythicalIdx, setMythicalIdx] = useState(() => Math.floor(Math.random() * MYTHICAL_LIST.length));
 
-  // Auto cycling
+  // Auto cycling with random selections
   useEffect(() => {
     const legInterval = setInterval(() => {
-      setLegendaryIdx((prev) => (prev + 1) % LEGENDARY_LIST.length);
+      setLegendaryIdx((prev) => {
+        let nextIdx = Math.floor(Math.random() * LEGENDARY_LIST.length);
+        while (nextIdx === prev && LEGENDARY_LIST.length > 1) {
+          nextIdx = Math.floor(Math.random() * LEGENDARY_LIST.length);
+        }
+        return nextIdx;
+      });
     }, 4500);
 
     const mythInterval = setInterval(() => {
-      setMythicalIdx((prev) => (prev + 1) % MYTHICAL_LIST.length);
+      setMythicalIdx((prev) => {
+        let nextIdx = Math.floor(Math.random() * MYTHICAL_LIST.length);
+        while (nextIdx === prev && MYTHICAL_LIST.length > 1) {
+          nextIdx = Math.floor(Math.random() * MYTHICAL_LIST.length);
+        }
+        return nextIdx;
+      });
     }, 4500);
 
     return () => {

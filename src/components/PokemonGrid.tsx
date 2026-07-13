@@ -79,8 +79,17 @@ export default function PokemonGrid({
     setVisibleCount(24);
   }, [searchQuery, selectedType, selectedGen, sortOption]);
 
-  // Featured Pokemon selection for Home page (exactly 6 Pokémon)
-  const featuredIds = useMemo(() => [1, 4, 7, 25, 133, 150], []);
+  // Featured Pokemon selection for Home page (exactly 6 random Pokémon)
+  const featuredIds = useMemo(() => {
+    const ids: number[] = [];
+    while (ids.length < 6) {
+      const randId = Math.floor(Math.random() * 1025) + 1;
+      if (!ids.includes(randId)) {
+        ids.push(randId);
+      }
+    }
+    return ids;
+  }, []);
 
   // Filter & Sort list of Pokémon
   const filteredPokemon = useMemo(() => {

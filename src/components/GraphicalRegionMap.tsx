@@ -96,7 +96,7 @@ export default function GraphicalRegionMap({
   onSelectNode,
 }: GraphicalRegionMapProps) {
   const [mapMode, setMapMode] = useState<"route" | "train">("route");
-  const [is3DMode, setIs3DMode] = useState(true);
+  const [is3DMode, setIs3DMode] = useState(false);
   const [pitch, setPitch] = useState(30); // rotateX
   const [yaw, setYaw] = useState(-15);  // rotateY
   const [isFullscreen, setIsFullscreen] = useState(false);

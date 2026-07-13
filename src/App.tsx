@@ -11,16 +11,10 @@ import FunSection from "./components/FunSection";
 import FavoritesSection from "./components/FavoritesSection";
 import AboutSection from "./components/AboutSection";
 import Footer from "./components/Footer";
-import LoginModal from "./components/LoginModal";
 import { CookieBanner, PrivacyPolicyModal, TermsOfServicesModal } from "./components/LegalModals";
 import { Region } from "./types";
 import { Sparkles, Heart, ChevronRight } from "lucide-react";
 
-interface User {
-  username: string;
-  email: string;
-  avatar: number;
-}
 
 export default function App() {
   const [activePage, setActivePage] = useState<string>("home");
@@ -31,10 +25,6 @@ export default function App() {
   
   // Favorites State synced to LocalStorage
   const [favorites, setFavorites] = useState<number[]>([]);
-
-  // User Auth states
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [isLoginOpen, setIsLoginOpen] = useState<boolean>(false);
 
   // Modal Launcher State
   const [selectedPokemonId, setSelectedPokemonId] = useState<number | null>(null);
@@ -51,62 +41,25 @@ export default function App() {
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  // Load user & theme state on mount
+  // Load theme state on mount
   useEffect(() => {
-    const savedUser = localStorage.getItem("dexoria_current_user");
-    if (savedUser) {
-      try {
-        setCurrentUser(JSON.parse(savedUser));
-      } catch (err) {
-        console.error("Failed to parse current user storage", err);
-      }
-    }
-
     const savedTheme = localStorage.getItem("dexoria_theme");
     if (savedTheme) {
       setIsLightTheme(savedTheme === "light");
     }
   }, []);
 
-  // Synchronize favorites whenever current user changes
+  // Synchronize favorites on mount
   useEffect(() => {
-    if (currentUser) {
-      const savedUserFavs = localStorage.getItem(`dexoria_user_favorites_${currentUser.username}`);
-      if (savedUserFavs) {
-        try {
-          setFavorites(JSON.parse(savedUserFavs));
-        } catch (err) {
-          setFavorites([]);
-        }
-      } else {
-        // Fallback: If they had guest favorites before logging in, copy them over
-        const savedGuestFavs = localStorage.getItem("dexoria_favorites");
-        if (savedGuestFavs) {
-          try {
-            const parsed = JSON.parse(savedGuestFavs);
-            setFavorites(parsed);
-            localStorage.setItem(`dexoria_user_favorites_${currentUser.username}`, JSON.stringify(parsed));
-          } catch (err) {
-            setFavorites([]);
-          }
-        } else {
-          setFavorites([]);
-        }
-      }
-    } else {
-      // Guest mode
-      const savedGuestFavs = localStorage.getItem("dexoria_favorites");
-      if (savedGuestFavs) {
-        try {
-          setFavorites(JSON.parse(savedGuestFavs));
-        } catch (err) {
-          setFavorites([]);
-        }
-      } else {
+    const savedGuestFavs = localStorage.getItem("dexoria_favorites");
+    if (savedGuestFavs) {
+      try {
+        setFavorites(JSON.parse(savedGuestFavs));
+      } catch (err) {
         setFavorites([]);
       }
     }
-  }, [currentUser]);
+  }, []);
 
   // Save theme state updates
   useEffect(() => {
@@ -204,32 +157,10 @@ export default function App() {
     }
 
     setFavorites(updated);
-    if (currentUser) {
-      localStorage.setItem(`dexoria_user_favorites_${currentUser.username}`, JSON.stringify(updated));
-    } else {
-      localStorage.setItem("dexoria_favorites", JSON.stringify(updated));
-    }
+    localStorage.setItem("dexoria_favorites", JSON.stringify(updated));
 
     // Show temporary toast notification
     setToastMessage(message);
-    setTimeout(() => {
-      setToastMessage(null);
-    }, 2800);
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem("dexoria_current_user");
-    setCurrentUser(null);
-    setToastMessage("Session terminated. Switched back to Guest Mode.");
-    setTimeout(() => {
-      setToastMessage(null);
-    }, 2800);
-  };
-
-  const handleLoginSuccess = (user: User) => {
-    localStorage.setItem("dexoria_current_user", JSON.stringify(user));
-    setCurrentUser(user);
-    setToastMessage(`Logged in as ${user.username}! Synchronized PokéDex.`);
     setTimeout(() => {
       setToastMessage(null);
     }, 2800);
@@ -267,9 +198,6 @@ export default function App() {
         isLightTheme={isLightTheme}
         setIsLightTheme={setIsLightTheme}
         favoritesCount={favorites.length}
-        currentUser={currentUser}
-        onOpenLogin={() => setIsLoginOpen(true)}
-        onLogout={handleLogout}
       />
 
       {/* Main Content Router */}
@@ -370,7 +298,7 @@ export default function App() {
                 isLightTheme ? "bg-[#EFEAE2] border-[#E5DDD0]/50" : "bg-[#151516] border-white/5"
               }`}>
                 {(["dex", "types", "compare"] as const).map((tab) => {
-                  const label = tab === "dex" ? "National Pokédex" : tab === "types" ? "Elemental Types" : "Compare Dossiers";
+                  const label = tab === "dex" ? "National Pokédex" : tab === "types" ? "Elemental Types" : "Compare";
                   const isActive = nationalSubTab === tab;
                   return (
                     <button
@@ -430,6 +358,8 @@ export default function App() {
                 </div>
                 <TypesSection
                   isLightTheme={isLightTheme}
+                  favorites={favorites}
+                  toggleFavorite={toggleFavorite}
                   onSelectPokemonById={handleSelectPokemonById}
                 />
               </div>
@@ -438,9 +368,6 @@ export default function App() {
             {nationalSubTab === "compare" && (
               <div>
                 <div className="max-w-4xl mx-auto text-center px-4 mb-10">
-                  <span className="text-xs font-extrabold text-blue-500 uppercase tracking-widest block mb-2">
-                    Dossier vs Dossier
-                  </span>
                   <h1 className="font-display font-extrabold text-3xl md:text-5xl tracking-tight">
                     Compare Archives
                   </h1>
@@ -485,7 +412,7 @@ export default function App() {
 
         {activePage === "about" && (
           <div className="py-8">
-            <AboutSection isLightTheme={isLightTheme} currentUser={currentUser} />
+            <AboutSection isLightTheme={isLightTheme} />
           </div>
         )}
 
@@ -539,14 +466,6 @@ export default function App() {
           <span>{toastMessage}</span>
         </div>
       )}
-
-      {/* Secure User Credentials Modal overlay */}
-      <LoginModal
-        isOpen={isLoginOpen}
-        onClose={() => setIsLoginOpen(false)}
-        isLightTheme={isLightTheme}
-        onLoginSuccess={handleLoginSuccess}
-      />
 
       {/* Cookies Consent Prompt Banner */}
       <CookieBanner 
