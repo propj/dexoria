@@ -13,7 +13,7 @@ import AboutSection from "./components/AboutSection";
 import Footer from "./components/Footer";
 import { CookieBanner, PrivacyPolicyModal, TermsOfServicesModal } from "./components/LegalModals";
 import { Region } from "./types";
-import { Sparkles, Heart, ChevronRight } from "lucide-react";
+import { Sparkles, Heart, ChevronRight, Lock, Package } from "lucide-react";
 
 
 export default function App() {
@@ -60,6 +60,11 @@ export default function App() {
       }
     }
   }, []);
+
+  // Scroll to top automatically when activePage or nationalSubTab changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [activePage, nationalSubTab]);
 
   // Save theme state updates
   useEffect(() => {
@@ -413,6 +418,49 @@ export default function App() {
         {activePage === "about" && (
           <div className="py-8">
             <AboutSection isLightTheme={isLightTheme} />
+          </div>
+        )}
+
+        {activePage === "characters" && (
+          <div className="py-12 max-w-4xl mx-auto px-6 text-center">
+            <div className={`p-8 md:p-12 rounded-3xl border glass transition-all ${
+              isLightTheme
+                ? "bg-white/80 border-slate-300/40 text-slate-900 shadow-xl"
+                : "bg-slate-950/40 border-white/5 text-slate-100 shadow-2xl"
+            }`}>
+              <div className="flex justify-center mb-6 relative">
+                <div className="absolute w-24 h-24 rounded-full bg-blue-500/10 blur-xl animate-pulse" />
+                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center border relative z-10 ${
+                  isLightTheme 
+                    ? "bg-blue-50 border-blue-200 text-blue-600" 
+                    : "bg-blue-500/10 border-blue-500/20 text-blue-400"
+                }`}>
+                  <Package className="w-8 h-8" />
+                </div>
+                <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-[#FAF7F0] dark:bg-[#080809] border border-slate-500/10 flex items-center justify-center">
+                  <Lock className="w-3.5 h-3.5 text-amber-500" />
+                </div>
+              </div>
+
+              <span className="px-3 py-1 text-xs font-bold rounded-full bg-blue-500/10 text-blue-500 border border-blue-500/20 uppercase tracking-widest inline-block mb-4">
+                Feature Coming Soon
+              </span>
+
+              <h1 className="font-display font-black text-3xl md:text-5xl tracking-tight mb-4">
+                Char/Item Dex
+              </h1>
+
+              <p className="text-sm md:text-base text-slate-500 dark:text-slate-400 max-w-lg mx-auto leading-relaxed mb-8">
+                We're currently gathering data, sprites, and stats for trainer characters and item catalogs across all generations. Check back soon for the ultimate database expansion!
+              </p>
+
+              <button
+                onClick={() => setActivePage("home")}
+                className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-bold text-sm transition-all duration-300 hover:-translate-y-0.5 shadow-lg shadow-blue-500/20 cursor-pointer"
+              >
+                Go Back to Home
+              </button>
+            </div>
           </div>
         )}
 

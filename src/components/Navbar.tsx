@@ -35,6 +35,7 @@ export default function Navbar({
     { id: "home", label: "Home" },
     { id: "regions", label: "Regions" },
     { id: "national", label: "National Dex" },
+    { id: "characters", label: "Char/Item Dex" },
     { id: "timeline", label: "Timeline" },
     { id: "fun", label: "Fun" },
     { id: "about", label: "About" },

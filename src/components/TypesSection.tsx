@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { TYPES_CHART, getPokemonColor, getDarkTypeColor } from "../data/pokemonGenerations";
 import { Heart } from "lucide-react";
 
@@ -20,6 +20,50 @@ export default function TypesSection({
   const [loading, setLoading] = useState(false);
   const [visibleCount, setVisibleCount] = useState(24);
   const [typesCache, setTypesCache] = useState<Record<number, string[]>>({});
+
+  const detailsRef = useRef<HTMLDivElement | null>(null);
+  const typeContainerRef = useRef<HTMLDivElement | null>(null);
+  const loaderRef = useRef<HTMLDivElement | null>(null);
+
+  // Intersection Observer for infinite auto-loading scroll
+  useEffect(() => {
+    if (matchingPokemon.length <= visibleCount) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisibleCount((prev) => Math.min(prev + 24, matchingPokemon.length));
+        }
+      },
+      { rootMargin: "150px" } // trigger loading before reaching the absolute end
+    );
+
+    const currentLoader = loaderRef.current;
+    if (currentLoader) {
+      observer.observe(currentLoader);
+    }
+
+    return () => {
+      if (currentLoader) {
+        observer.unobserve(currentLoader);
+      }
+    };
+  }, [matchingPokemon.length, visibleCount]);
+
+  // Auto-scroll elements into view on selected type change
+  useEffect(() => {
+    // Scroll the corresponding type button into view in the horizontal scrolling menu (for mobile)
+    const activeBtn = typeContainerRef.current?.querySelector(`[data-type="${selectedType}"]`);
+    if (activeBtn) {
+      activeBtn.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+    }
+
+    // Scroll the page smoothly down to the matchup showcase results
+    const isInitial = selectedType === "fire" && matchingPokemon.length === 0;
+    if (!isInitial) {
+      detailsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [selectedType]);
 
   // Fetch all Pokemon belonging to the selected type
   useEffect(() => {
@@ -90,14 +134,18 @@ export default function TypesSection({
   return (
     <div className="max-w-6xl mx-auto px-4 md:px-8">
       {/* Type grid selector */}
-      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-9 gap-3">
+      <div 
+        ref={typeContainerRef}
+        className="flex md:grid md:grid-cols-6 lg:grid-cols-9 gap-3 overflow-x-auto md:overflow-x-visible pb-3 md:pb-0 scrollbar-none snap-x"
+      >
         {TYPES_CHART.map((t) => {
           const isSelected = selectedType === t.name;
           return (
             <button
               key={t.name}
+              data-type={t.name}
               onClick={() => setSelectedType(t.name)}
-              className={`px-3 py-3 rounded-xl cursor-pointer font-bold text-xs capitalize text-center text-white border transition-all hover:-translate-y-1 ${
+              className={`px-4 py-3 rounded-xl cursor-pointer font-bold text-xs capitalize text-center text-white border transition-all hover:-translate-y-1 snap-center shrink-0 min-w-[90px] md:min-w-0 ${
                 isSelected
                   ? "ring-4 ring-blue-500/30 scale-105"
                   : "hover:opacity-90"
@@ -115,6 +163,7 @@ export default function TypesSection({
 
       {/* Type Details Showcase Card */}
       <div
+        ref={detailsRef}
         className={`glass p-6 md:p-8 rounded-3xl border mt-10 ${
           isLightTheme
             ? "bg-white/70 border-slate-300/40 text-slate-900 shadow-sm"
@@ -332,19 +381,11 @@ export default function TypesSection({
             })}
           </div>
 
-          {/* Load More Button matching National Dex pagination style */}
+          {/* Infinite Scroll Sentinel Spinner */}
           {matchingPokemon.length > visibleCount && (
-            <div className="flex justify-center mt-12 pb-6">
-              <button
-                onClick={() => setVisibleCount((prev) => prev + 24)}
-                className={`px-8 py-3.5 rounded-2xl font-bold text-sm uppercase tracking-wider cursor-pointer shadow-lg hover:-translate-y-0.5 transition-all ${
-                  isLightTheme
-                    ? "bg-blue-600 hover:bg-blue-500 text-white shadow-blue-500/10"
-                    : "bg-white/5 hover:bg-white/10 text-white border border-white/10"
-                }`}
-              >
-                Load More Pokémon
-              </button>
+            <div ref={loaderRef} className="flex flex-col items-center justify-center mt-12 pb-8 gap-2">
+              <div className="w-8 h-8 rounded-full border-4 border-blue-500/20 border-t-blue-500 animate-spin" />
+              <span className="text-xs font-mono text-slate-500 animate-pulse">Loading more Pokémon...</span>
             </div>
           )}
         </>
