@@ -201,7 +201,7 @@ export default function Hero({
               isLightTheme ? "text-slate-600 font-medium" : "text-slate-400"
             }`}
           >
-            Embark on a nostalgic journey spanning Kanto to Paldea. Explore 3D holographic region maps, master matchup charts, build customized battle teams, and test memories in real-time.
+            Ultimate interactive Pokédex and comprehensive Pokémon universe encyclopedia.
           </motion.p>
 
           {/* Buttons */}
