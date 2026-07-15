@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Black outline for the whole ball -->
+  <circle cx="256" cy="256" r="240" fill="#ffffff" stroke="#0f172a" stroke-width="32" />
+  <!-- Upper Half Red -->
+  <path d="M 16 256 A 240 240 0 0 1 496 256 Z" fill="#ef4444" stroke="#0f172a" stroke-width="32" />
+  <!-- Center horizontal division line -->
+  <line x1="16" y1="256" x2="496" y2="256" stroke="#0f172a" stroke-width="32" />
+  <!-- Outer button circle -->
+  <circle cx="256" cy="256" r="76" fill="#ffffff" stroke="#0f172a" stroke-width="32" />
+  <!-- Inner button circle -->
+  <circle cx="256" cy="256" r="32" fill="#ffffff" stroke="#0f172a" stroke-width="12" />
+</svg>

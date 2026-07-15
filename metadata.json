@@ -1,6 +1,6 @@
 {
   "name": "Dexoria",
-  "description": "A premium Pokédex experience for every trainer. Explore regions, search Pokémon, and play mini-games.",
+  "description": "The ultimate interactive Pokédex and comprehensive Pokémon universe encyclopedia spanning all generations.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
