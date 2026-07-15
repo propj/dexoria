@@ -34,8 +34,9 @@ export default function Navbar({
   const navItems = [
     { id: "home", label: "Home" },
     { id: "regions", label: "Regions" },
-    { id: "national", label: "National Dex" },
+    { id: "national", label: "Pokédex" },
     { id: "characters", label: "Char/Item Dex" },
+    { id: "poke-ai", label: "Poke AI" },
     { id: "timeline", label: "Timeline" },
     { id: "fun", label: "Fun" },
     { id: "about", label: "About" },

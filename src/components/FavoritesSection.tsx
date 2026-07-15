@@ -60,7 +60,7 @@ export default function FavoritesSection({
         </div>
         <h3 className="font-display font-extrabold text-xl mb-2">No Favorites Recorded Yet</h3>
         <p className="text-sm text-slate-500 leading-relaxed">
-          Mark any Pokémon with a heart card button while exploring the National Pokédex or region lists to cache your dream team roster here!
+          Mark any Pokémon with a heart card button while exploring the Pokédex or region lists to cache your dream team roster here!
         </p>
       </div>
     );

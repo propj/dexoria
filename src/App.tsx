@@ -13,14 +13,15 @@ import AboutSection from "./components/AboutSection";
 import Footer from "./components/Footer";
 import { CookieBanner, PrivacyPolicyModal, TermsOfServicesModal } from "./components/LegalModals";
 import { Region } from "./types";
-import { Sparkles, Heart, ChevronRight, Lock, Package } from "lucide-react";
+import { REGIONS_DATA } from "./data/regions";
+import { Sparkles, Heart, ChevronRight, Lock, Package, Wand2, Users, Newspaper, ChevronDown, ChevronUp, Calendar } from "lucide-react";
 
 
 export default function App() {
   const [activePage, setActivePage] = useState<string>("home");
   const [isLightTheme, setIsLightTheme] = useState<boolean>(false);
   
-  // Nested sub-tabs inside National Dex page
+  // Nested sub-tabs inside Pokédex page
   const [nationalSubTab, setNationalSubTab] = useState<"dex" | "types" | "compare">("dex");
   
   // Favorites State synced to LocalStorage
@@ -39,6 +40,9 @@ export default function App() {
   const [isPrivacyOpen, setIsPrivacyOpen] = useState<boolean>(false);
   const [isTermsOpen, setIsTermsOpen] = useState<boolean>(false);
 
+  // Home Page News Section State
+  const [isNewsExpanded, setIsNewsExpanded] = useState<boolean>(false);
+
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   // Load theme state on mount
@@ -48,6 +52,74 @@ export default function App() {
       setIsLightTheme(savedTheme === "light");
     }
   }, []);
+
+  // Load page state from URL on mount and handle hash changes
+  useEffect(() => {
+    const handleUrlSync = () => {
+      // Look at search params first
+      const params = new URLSearchParams(window.location.search);
+      const pageParam = params.get("page");
+      
+      // Look at hash next
+      const rawHash = window.location.hash.substring(1); // e.g., "regions/kanto", "national/compare", "home"
+      const hashParts = rawHash.split("/");
+      const hashPage = hashParts[0];
+      const hashSub = hashParts[1];
+      
+      const targetPage = pageParam || hashPage;
+      const validPages = ["home", "regions", "national", "characters", "poke-ai", "timeline", "fun", "about", "favorites"];
+      
+      if (targetPage && validPages.includes(targetPage)) {
+        setActivePage(targetPage);
+        
+        if (targetPage === "regions") {
+          if (hashSub) {
+            const foundRegion = REGIONS_DATA.find(r => r.id.toLowerCase() === hashSub.toLowerCase());
+            if (foundRegion) {
+              setSelectedRegion(foundRegion);
+            } else {
+              setSelectedRegion(null);
+            }
+          } else {
+            setSelectedRegion(null);
+          }
+        } else if (targetPage === "national") {
+          if (hashSub && ["dex", "types", "compare"].includes(hashSub)) {
+            setNationalSubTab(hashSub as any);
+          } else {
+            const tabParam = params.get("tab");
+            if (tabParam && ["dex", "types", "compare"].includes(tabParam)) {
+              setNationalSubTab(tabParam as any);
+            }
+          }
+        }
+      } else if (rawHash === "") {
+        setActivePage("home");
+        setSelectedRegion(null);
+      }
+    };
+
+    handleUrlSync();
+    window.addEventListener("hashchange", handleUrlSync);
+    return () => window.removeEventListener("hashchange", handleUrlSync);
+  }, []);
+
+  // Update URL hash when activePage, selectedRegion, or nationalSubTab changes
+  useEffect(() => {
+    if (activePage === "home") {
+      if (window.location.hash) {
+        window.history.replaceState(null, "", "/");
+      }
+    } else {
+      let path = activePage;
+      if (activePage === "regions" && selectedRegion) {
+        path += `/${selectedRegion.id}`;
+      } else if (activePage === "national") {
+        path += `/${nationalSubTab}`;
+      }
+      window.history.replaceState(null, "", `#${path}`);
+    }
+  }, [activePage, selectedRegion, nationalSubTab]);
 
   // Synchronize favorites on mount
   useEffect(() => {
@@ -215,6 +287,168 @@ export default function App() {
               isLightTheme={isLightTheme}
             />
 
+            {/* Collapsible Dexoria Updates News Section */}
+            <div className="max-w-6xl mx-auto px-6 md:px-12 py-6">
+              <div
+                className={`glass rounded-3xl border shadow-xl transition-all duration-300 overflow-hidden ${
+                  isLightTheme
+                    ? "bg-white/70 border-slate-300/40 text-slate-900"
+                    : "bg-slate-950/40 border-white/5 text-slate-100"
+                }`}
+              >
+                {/* News Header Bar (Toggle on Click) */}
+                <div
+                  onClick={() => setIsNewsExpanded(!isNewsExpanded)}
+                  className={`px-6 py-4 flex items-center justify-between cursor-pointer select-none transition-colors duration-200 ${
+                    isLightTheme ? "hover:bg-slate-100/50" : "hover:bg-white/3"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-xl bg-blue-500/10 text-blue-500">
+                      <Newspaper className="w-5 h-5 animate-pulse" />
+                    </div>
+                    <div>
+                      <h3 className="font-display font-extrabold text-lg md:text-xl flex items-center gap-2">
+                        <span>Dexoria Chronicle</span>
+                        <span className="hidden sm:inline-block px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-blue-500 text-white rounded-md">
+                          Live Feed
+                        </span>
+                      </h3>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3">
+                    <button
+                      className={`text-xs font-bold px-3 py-1.5 rounded-lg border transition-all ${
+                        isLightTheme
+                          ? "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
+                          : "bg-white/5 border-white/5 text-slate-300 hover:bg-white/10"
+                      }`}
+                    >
+                      {isNewsExpanded ? "Minimize News" : "Maximize News"}
+                    </button>
+                    {isNewsExpanded ? (
+                      <ChevronUp className="w-5 h-5 text-slate-400" />
+                    ) : (
+                      <ChevronDown className="w-5 h-5 text-slate-400 animate-bounce" />
+                    )}
+                  </div>
+                </div>
+
+                {/* News Articles Panel */}
+                {isNewsExpanded && (
+                  <div className="p-6 pt-2 border-t border-slate-500/10">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2">
+                      {/* Update 1 */}
+                      <div
+                        className={`p-4 rounded-2xl border transition-all hover:scale-[1.01] hover:shadow-lg ${
+                          isLightTheme ? "bg-slate-50/60 border-slate-200" : "bg-white/3 border-white/5"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[10px] font-bold text-blue-500 uppercase tracking-widest px-2 py-0.5 bg-blue-500/10 rounded">
+                            New Feature
+                          </span>
+                          <span className="text-[10px] font-mono text-slate-400 flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            July 15, 2026
+                          </span>
+                        </div>
+                        <h4 className="font-bold text-sm mb-1.5">Custom Team Builder Released!</h4>
+                        <p className="text-xs text-slate-500 leading-relaxed">
+                          Replaced the basic team selector with an advanced Team Builder. Pick roster sizes, customize featured elements, and constraint unique types in your squad!
+                        </p>
+                      </div>
+
+                      {/* Update 2 */}
+                      <div
+                        className={`p-4 rounded-2xl border transition-all hover:scale-[1.01] hover:shadow-lg ${
+                          isLightTheme ? "bg-slate-50/60 border-slate-200" : "bg-white/3 border-white/5"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest px-2 py-0.5 bg-indigo-500/10 rounded">
+                            UI Polishing
+                          </span>
+                          <span className="text-[10px] font-mono text-slate-400 flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            July 14, 2026
+                          </span>
+                        </div>
+                        <h4 className="font-bold text-sm mb-1.5">Banner Scroll Translations</h4>
+                        <p className="text-xs text-slate-500 leading-relaxed">
+                          Adjusted scrolling Japanese typographic train speeds under Region banners, improving readability and enhancing light/dark themes alignment.
+                        </p>
+                      </div>
+
+                      {/* Update 3 */}
+                      <div
+                        className={`p-4 rounded-2xl border transition-all hover:scale-[1.01] hover:shadow-lg ${
+                          isLightTheme ? "bg-slate-50/60 border-slate-200" : "bg-white/3 border-white/5"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest px-2 py-0.5 bg-emerald-500/10 rounded">
+                            Database Split
+                          </span>
+                          <span className="text-[10px] font-mono text-slate-400 flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            July 12, 2026
+                          </span>
+                        </div>
+                        <h4 className="font-bold text-sm mb-1.5">Split Character and Item Dex</h4>
+                        <p className="text-xs text-slate-500 leading-relaxed">
+                          Refined National Dex category headers, preparing a standalone Item Dex and Trainer Character lists. Coming soon next sprint!
+                        </p>
+                      </div>
+
+                      {/* Update 4 */}
+                      <div
+                        className={`p-4 rounded-2xl border transition-all hover:scale-[1.01] hover:shadow-lg ${
+                          isLightTheme ? "bg-slate-50/60 border-slate-200" : "bg-white/3 border-white/5"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[10px] font-bold text-amber-500 uppercase tracking-widest px-2 py-0.5 bg-amber-500/10 rounded">
+                            Contrast Refactor
+                          </span>
+                          <span className="text-[10px] font-mono text-slate-400 flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            July 10, 2026
+                          </span>
+                        </div>
+                        <h4 className="font-bold text-sm mb-1.5">Light Mode Visibility Fix</h4>
+                        <p className="text-xs text-slate-500 leading-relaxed">
+                          Fixed color contrast on various interactive components, including Compare tab toggles, tables, and Pokemon details stats graphs.
+                        </p>
+                      </div>
+
+                      {/* Update 5 */}
+                      <div
+                        className={`p-4 rounded-2xl border transition-all hover:scale-[1.01] hover:shadow-lg ${
+                          isLightTheme ? "bg-slate-50/60 border-slate-200" : "bg-white/3 border-white/5"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[10px] font-bold text-purple-500 uppercase tracking-widest px-2 py-0.5 bg-purple-500/10 rounded">
+                            System Launch
+                          </span>
+                          <span className="text-[10px] font-mono text-slate-400 flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            July 05, 2026
+                          </span>
+                        </div>
+                        <h4 className="font-bold text-sm mb-1.5">National Dex is Live!</h4>
+                        <p className="text-xs text-slate-500 leading-relaxed">
+                          The National Dex containing over 640 detailed records (Gen 1 to 5) has been fully published, featuring search filters and type weakness matrix!
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
             {/* Curated Region scroll layout */}
             <div className="max-w-6xl mx-auto px-6 md:px-12 py-10">
               <div className="mb-8 text-center md:text-left">
@@ -303,7 +537,7 @@ export default function App() {
                 isLightTheme ? "bg-[#EFEAE2] border-[#E5DDD0]/50" : "bg-[#151516] border-white/5"
               }`}>
                 {(["dex", "types", "compare"] as const).map((tab) => {
-                  const label = tab === "dex" ? "National Pokédex" : tab === "types" ? "Elemental Types" : "Compare";
+                  const label = tab === "dex" ? "Pokédex" : tab === "types" ? "Elemental Types" : "Compare";
                   const isActive = nationalSubTab === tab;
                   return (
                     <button
@@ -333,7 +567,7 @@ export default function App() {
                     The Complete Archive
                   </span>
                   <h1 className="font-display font-extrabold text-3xl md:text-5xl tracking-tight">
-                    National Pokédex
+                    Pokédex
                   </h1>
                   <p className="text-xs md:text-sm text-slate-500 mt-2 max-w-lg mx-auto">
                     Dossier archives for generations 1 to 9. Filter dynamically by element types, release order, or alphabetically.
@@ -422,6 +656,103 @@ export default function App() {
         )}
 
         {activePage === "characters" && (
+          <div className="py-12 max-w-5xl mx-auto px-6">
+            <div className="text-center mb-12 animate-fade-in">
+              <span className="px-3 py-1 text-xs font-bold rounded-full bg-blue-500/10 text-blue-500 border border-blue-500/20 uppercase tracking-widest inline-block mb-4">
+                Ultimate Database Expansion
+              </span>
+              <h1 className="font-display font-black text-3xl md:text-5xl tracking-tight mb-4">
+                Char/Item Dex
+              </h1>
+              <p className="text-sm md:text-base text-slate-500 dark:text-slate-400 max-w-lg mx-auto leading-relaxed">
+                We're currently compiling extensive data tables and visual archives for trainer characters, items, and accessories.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Character Dex Section */}
+              <div className={`p-8 md:p-10 rounded-3xl border transition-all ${
+                isLightTheme
+                  ? "bg-white/80 border-slate-300/40 text-slate-900 shadow-xl"
+                  : "bg-slate-950/40 border-white/5 text-slate-100 shadow-2xl"
+              }`}>
+                <div className="flex justify-center mb-6 relative">
+                  <div className="absolute w-24 h-24 rounded-full bg-blue-500/10 blur-xl animate-pulse" />
+                  <div className={`w-16 h-16 rounded-2xl flex items-center justify-center border relative z-10 ${
+                    isLightTheme 
+                      ? "bg-blue-50 border-blue-200 text-blue-600" 
+                      : "bg-blue-500/10 border-blue-500/20 text-blue-400"
+                  }`}>
+                    <Users className="w-8 h-8" />
+                  </div>
+                  <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-[#FAF7F0] dark:bg-[#080809] border border-slate-500/10 flex items-center justify-center">
+                    <Lock className="w-3.5 h-3.5 text-amber-500" />
+                  </div>
+                </div>
+
+                <div className="text-center">
+                  <span className="px-3 py-1 text-[10px] font-extrabold rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-500 border border-amber-500/20 uppercase tracking-widest inline-block mb-4 animate-pulse">
+                    Coming Soon
+                  </span>
+
+                  <h3 className="font-display font-black text-2xl tracking-tight mb-3">
+                    Character Dex
+                  </h3>
+
+                  <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400 leading-relaxed mb-6">
+                    Detailed profile indexes for Gym Leaders, Elite Four, Champions, Rivals, and legendary trainers across Kanto and beyond. Compiles their battle teams, strategies, sprites, and background lore.
+                  </p>
+                </div>
+              </div>
+
+              {/* Item Dex Section */}
+              <div className={`p-8 md:p-10 rounded-3xl border transition-all ${
+                isLightTheme
+                  ? "bg-white/80 border-slate-300/40 text-slate-900 shadow-xl"
+                  : "bg-slate-950/40 border-white/5 text-slate-100 shadow-2xl"
+              }`}>
+                <div className="flex justify-center mb-6 relative">
+                  <div className="absolute w-24 h-24 rounded-full bg-emerald-500/10 blur-xl animate-pulse" />
+                  <div className={`w-16 h-16 rounded-2xl flex items-center justify-center border relative z-10 ${
+                    isLightTheme 
+                      ? "bg-emerald-50 border-emerald-200 text-emerald-600" 
+                      : "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+                  }`}>
+                    <Package className="w-8 h-8" />
+                  </div>
+                  <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-[#FAF7F0] dark:bg-[#080809] border border-slate-500/10 flex items-center justify-center">
+                    <Lock className="w-3.5 h-3.5 text-amber-500" />
+                  </div>
+                </div>
+
+                <div className="text-center">
+                  <span className="px-3 py-1 text-[10px] font-extrabold rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-500 border border-amber-500/20 uppercase tracking-widest inline-block mb-4 animate-pulse">
+                    Coming Soon
+                  </span>
+
+                  <h3 className="font-display font-black text-2xl tracking-tight mb-3">
+                    Item Dex
+                  </h3>
+
+                  <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400 leading-relaxed mb-6">
+                    A comprehensive directory of Poké Balls, battle items, berries, key story artifacts, and held items. Explore dynamic location maps, purchase values, and detailed passive effects.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="text-center mt-12">
+              <button
+                onClick={() => setActivePage("home")}
+                className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-bold text-sm transition-all duration-300 hover:-translate-y-0.5 shadow-lg shadow-blue-500/20 cursor-pointer"
+              >
+                Go Back to Home
+              </button>
+            </div>
+          </div>
+        )}
+
+        {activePage === "poke-ai" && (
           <div className="py-12 max-w-4xl mx-auto px-6 text-center">
             <div className={`p-8 md:p-12 rounded-3xl border glass transition-all ${
               isLightTheme
@@ -429,34 +760,34 @@ export default function App() {
                 : "bg-slate-950/40 border-white/5 text-slate-100 shadow-2xl"
             }`}>
               <div className="flex justify-center mb-6 relative">
-                <div className="absolute w-24 h-24 rounded-full bg-blue-500/10 blur-xl animate-pulse" />
+                <div className="absolute w-24 h-24 rounded-full bg-indigo-500/15 blur-2xl animate-pulse" />
                 <div className={`w-16 h-16 rounded-2xl flex items-center justify-center border relative z-10 ${
                   isLightTheme 
-                    ? "bg-blue-50 border-blue-200 text-blue-600" 
-                    : "bg-blue-500/10 border-blue-500/20 text-blue-400"
+                    ? "bg-indigo-50 border-indigo-200 text-indigo-600" 
+                    : "bg-indigo-500/10 border-indigo-500/20 text-indigo-400"
                 }`}>
-                  <Package className="w-8 h-8" />
+                  <Wand2 className="w-8 h-8 animate-pulse" />
                 </div>
                 <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-[#FAF7F0] dark:bg-[#080809] border border-slate-500/10 flex items-center justify-center">
                   <Lock className="w-3.5 h-3.5 text-amber-500" />
                 </div>
               </div>
 
-              <span className="px-3 py-1 text-xs font-bold rounded-full bg-blue-500/10 text-blue-500 border border-blue-500/20 uppercase tracking-widest inline-block mb-4">
+              <span className="px-3 py-1 text-xs font-bold rounded-full bg-indigo-500/10 text-indigo-500 border border-indigo-500/20 uppercase tracking-widest inline-block mb-4">
                 Feature Coming Soon
               </span>
 
               <h1 className="font-display font-black text-3xl md:text-5xl tracking-tight mb-4">
-                Char/Item Dex
+                Poke AI
               </h1>
 
               <p className="text-sm md:text-base text-slate-500 dark:text-slate-400 max-w-lg mx-auto leading-relaxed mb-8">
-                We're currently gathering data, sprites, and stats for trainer characters and item catalogs across all generations. Check back soon for the ultimate database expansion!
+                Unleash your creativity! Here you will soon be able to make your custom AI-generated Pokémon, write unique trainer stories, author comprehensive lore, and build playable custom mini-games and interactive fan-webpages.
               </p>
 
               <button
                 onClick={() => setActivePage("home")}
-                className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-bold text-sm transition-all duration-300 hover:-translate-y-0.5 shadow-lg shadow-blue-500/20 cursor-pointer"
+                className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-bold text-sm transition-all duration-300 hover:-translate-y-0.5 shadow-lg shadow-indigo-500/20 cursor-pointer"
               >
                 Go Back to Home
               </button>

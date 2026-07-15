@@ -252,6 +252,21 @@ export default function RegionSection({
   const [selectedType, setSelectedType] = useState("all");
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const [isHovered, setIsHovered] = useState(false);
+
+  const renderJapaneseBackground = (nativeName: string) => {
+    const japName = nativeName.split(" ")[0] || nativeName;
+    // Repeat Japanese region name to form a scrolling train
+    const trainText = Array(12).fill(japName).join("  •  ");
+    return (
+      <div className="absolute inset-0 pointer-events-none overflow-hidden flex items-center select-none z-0">
+        <div className="flex w-max shrink-0 animate-marquee text-5xl md:text-7xl font-sans font-black tracking-widest text-slate-500 dark:text-white opacity-[0.12] dark:opacity-[0.08] uppercase whitespace-nowrap gap-16">
+          <span>{trainText}</span>
+          <span>{trainText}</span>
+        </div>
+      </div>
+    );
+  };
 
   const scrollLeft = () => {
     if (scrollRef.current) {
@@ -264,6 +279,41 @@ export default function RegionSection({
       scrollRef.current.scrollBy({ left: 360, behavior: "smooth" });
     }
   };
+
+  React.useEffect(() => {
+    if (layout !== "scroll") return;
+    
+    let animationFrameId: number;
+    let lastTime = performance.now();
+    
+    const scrollContainer = scrollRef.current;
+    if (!scrollContainer) return;
+
+    const animateScroll = (time: number) => {
+      if (!isHovered) {
+        const delta = (time - lastTime) / 16; // Normalise to 60fps
+        lastTime = time;
+        
+        // Gentle train speed
+        const speed = 0.55; 
+        scrollContainer.scrollLeft += speed * delta;
+        
+        // Seamless wrap back to start of the first set
+        const halfScrollWidth = scrollContainer.scrollWidth / 2;
+        if (scrollContainer.scrollLeft >= halfScrollWidth) {
+          scrollContainer.scrollLeft -= halfScrollWidth;
+        }
+      } else {
+        lastTime = time;
+      }
+      animationFrameId = requestAnimationFrame(animateScroll);
+    };
+
+    animationFrameId = requestAnimationFrame(animateScroll);
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, [layout, isHovered]);
 
   const getOfficialArtwork = (id: number) => {
     return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
@@ -445,6 +495,9 @@ export default function RegionSection({
             <div className={`mb-10 p-8 md:p-12 rounded-[2rem] border relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-6 ${
               bannerStyle.gradient
             }`}>
+              {/* Scrolling Japanese Background Train */}
+              {renderJapaneseBackground(selectedRegion.nativeName)}
+
               {/* Decorative neon colored background elements */}
               <div className="absolute -right-20 -top-20 w-80 h-80 rounded-full blur-[100px] opacity-25 bg-[#FAF7F0]/10" />
 
@@ -812,7 +865,13 @@ export default function RegionSection({
   // Horizontal scroll layout
   if (layout === "scroll") {
     return (
-      <div className="relative group/carousel">
+      <div 
+        className="relative group/carousel"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        onTouchStart={() => setIsHovered(true)}
+        onTouchEnd={() => setIsHovered(false)}
+      >
         {/* Left Scroll Navigation Button */}
         <button
           onClick={(e) => {
@@ -872,9 +931,9 @@ export default function RegionSection({
         {/* Scrollable container */}
         <div 
           ref={scrollRef}
-          className="flex gap-6 overflow-x-auto pb-6 px-1 snap-x scroll-smooth scrollbar-none"
+          className="flex gap-6 overflow-x-auto pb-6 px-1 scrollbar-none"
         >
-          {REGIONS_DATA.map((region) => {
+          {[...REGIONS_DATA, ...REGIONS_DATA].map((region, index) => {
             const starIds = region.starterIds || [1, 4, 7];
             const starters = region.id === "kanto" ? [1, 4, 7, 25] : starIds;
             const legendaryId = getRegionLegendaryId(region.id);
@@ -884,10 +943,13 @@ export default function RegionSection({
 
             return (
               <div
-                key={region.id}
+                key={`${region.id}-${index}`}
                 onClick={() => onSelectRegion(region)}
-                className={`snap-start min-w-[340px] max-w-[360px] p-6 rounded-[2rem] cursor-pointer border relative overflow-hidden transition-all duration-300 hover:-translate-y-1.5 flex flex-col justify-between min-h-[220px] group shadow-lg ${cardStyles.gradient}`}
+                className={`min-w-[340px] max-w-[360px] p-6 rounded-[2rem] cursor-pointer border relative overflow-hidden transition-all duration-300 hover:-translate-y-1.5 flex flex-col justify-between min-h-[220px] group shadow-lg ${cardStyles.gradient}`}
               >
+                {/* Scrolling Japanese Background Train */}
+                {renderJapaneseBackground(region.nativeName)}
+
                 {/* Content Container */}
                 <div className="flex flex-col justify-between h-full min-h-[170px] relative z-10 pr-24">
                   {/* Top Row */}
@@ -981,6 +1043,9 @@ export default function RegionSection({
               onClick={() => onSelectRegion(region)}
               className={`p-6 rounded-[2rem] cursor-pointer border relative overflow-hidden transition-all duration-300 hover:-translate-y-1.5 flex flex-col justify-between min-h-[220px] group shadow-lg ${cardStyles.gradient}`}
             >
+              {/* Scrolling Japanese Background Train */}
+              {renderJapaneseBackground(region.nativeName)}
+
               {/* Content Container */}
               <div className="flex flex-col justify-between h-full min-h-[170px] relative z-10 pr-24">
                 {/* Top Row */}

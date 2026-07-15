@@ -25,6 +25,7 @@ export default function CompareSection({ isLightTheme, onSelectPokemonById }: Co
   const [pokeBDetails, setPokeBDetails] = useState<any>(null);
   const [loadingA, setLoadingA] = useState(false);
   const [loadingB, setLoadingB] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
 
   // Get active regions
   const regionA = REGIONS_DATA.find((r) => r.id === regionAId) || REGIONS_DATA[0];
@@ -70,6 +71,7 @@ export default function CompareSection({ isLightTheme, onSelectPokemonById }: Co
 
   const searchPokemon = async (query: string, setTargetId: (id: number) => void) => {
     if (!query.trim()) return;
+    setSearchError(null);
     try {
       const formatted = query.toLowerCase().trim().replace(" ", "-");
       const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${formatted}`);
@@ -77,10 +79,13 @@ export default function CompareSection({ isLightTheme, onSelectPokemonById }: Co
         const data = await res.json();
         setTargetId(data.id);
       } else {
-        alert("Pokémon not found. Try searching a correct name like 'Pikachu' or ID like '25'!");
+        setSearchError("Pokémon not found! Try a valid name like 'Pikachu' or ID like '25'.");
+        setTimeout(() => setSearchError(null), 4000);
       }
     } catch (err) {
       console.error(err);
+      setSearchError("Connection issue. Please check your internet connection.");
+      setTimeout(() => setSearchError(null), 4000);
     }
   };
 
@@ -117,6 +122,8 @@ export default function CompareSection({ isLightTheme, onSelectPokemonById }: Co
             className={`px-5 py-2.5 rounded-xl cursor-pointer text-sm font-bold flex items-center gap-2 transition-all ${
               compareMode === "regions"
                 ? "bg-blue-600 text-white shadow-md"
+                : isLightTheme
+                ? "text-slate-600 hover:text-slate-900"
                 : "text-slate-400 hover:text-slate-100"
             }`}
           >
@@ -128,6 +135,8 @@ export default function CompareSection({ isLightTheme, onSelectPokemonById }: Co
             className={`px-5 py-2.5 rounded-xl cursor-pointer text-sm font-bold flex items-center gap-2 transition-all ${
               compareMode === "pokemon"
                 ? "bg-blue-600 text-white shadow-md"
+                : isLightTheme
+                ? "text-slate-600 hover:text-slate-900"
                 : "text-slate-400 hover:text-slate-100"
             }`}
           >
@@ -315,6 +324,11 @@ export default function CompareSection({ isLightTheme, onSelectPokemonById }: Co
       ) : (
         /* POKEMON COMPARE COMPONENT */
         <div className="flex flex-col gap-8">
+          {searchError && (
+            <div className="p-4 text-xs font-semibold rounded-2xl bg-red-500/15 border border-red-500/20 text-red-400 text-center animate-pulse">
+              {searchError}
+            </div>
+          )}
           {/* Search/Filter Bar */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Search slot A */}

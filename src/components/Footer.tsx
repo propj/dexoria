@@ -57,7 +57,7 @@ export default function Footer({
             onClick={() => handleNav("national")}
             className="text-left text-slate-500 hover:text-blue-500 transition-colors cursor-pointer"
           >
-            National Pokédex
+            Pokédex
           </button>
           <button
             onClick={() => handleNav("types")}

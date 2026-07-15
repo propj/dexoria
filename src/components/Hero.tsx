@@ -82,7 +82,7 @@ export default function Hero({
       <div className="max-w-[1400px] w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
         
         {/* LEFT COLUMN: Legendary Hologram Slideshow */}
-        <div className="col-span-1 lg:col-span-3 flex flex-col items-center justify-center order-2 lg:order-1">
+        <div className="hidden lg:flex col-span-1 lg:col-span-3 flex-col items-center justify-center order-2 lg:order-1">
           <div className="text-center lg:text-left mb-3 w-full max-w-[260px] pl-2">
             <span className={`text-[10px] font-mono font-extrabold tracking-[0.25em] uppercase ${isLightTheme ? "text-red-600" : "text-amber-500"}`}>
               [ LOG LEVEL: LEGENDARY ]
@@ -227,7 +227,7 @@ export default function Hero({
               }`}
             >
               <BookOpen className="w-4 h-4" />
-              <span>National Pokédex</span>
+              <span>Pokédex</span>
             </button>
           </motion.div>
 
@@ -256,7 +256,7 @@ export default function Hero({
         </div>
 
         {/* RIGHT COLUMN: Mythical Hologram Slideshow */}
-        <div className="col-span-1 lg:col-span-3 flex flex-col items-center justify-center order-3">
+        <div className="hidden lg:flex col-span-1 lg:col-span-3 flex-col items-center justify-center order-3">
           <div className="text-center lg:text-left mb-3 w-full max-w-[260px] pl-2">
             <span className={`text-[10px] font-mono font-extrabold tracking-[0.25em] uppercase ${isLightTheme ? "text-cyan-600" : "text-cyan-400"}`}>
               [ LOG LEVEL: MYTHICAL ]

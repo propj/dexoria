@@ -264,7 +264,7 @@ export default function TypesSection({
             {activeTypeInfo.name}-Type Pokémon
           </h3>
           <p className="text-xs text-slate-500 mt-1">
-            Displaying matching species sorted by National Pokédex number.
+            Displaying matching species sorted by Pokédex number.
           </p>
         </div>
         <span className="text-xs font-bold px-3 py-1.5 rounded-xl border border-slate-500/20 font-mono">
@@ -272,7 +272,7 @@ export default function TypesSection({
         </span>
       </div>
 
-      {/* Grid Display Area like shown in national pokedex */}
+      {/* Grid Display Area like shown in pokedex */}
       {loading ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-5">
           {Array.from({ length: 12 }).map((_, i) => (

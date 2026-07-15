@@ -289,7 +289,7 @@ export function PrivacyPolicyModal({ isOpen, onClose, isLightTheme }: LegalModal
                 <strong>Trainer Session Profile Details (`dexoria_current_user`):</strong> Stores your unique alphanumeric screen name, secure system references, avatar IDs, and session timestamp indicators. This prevents you from having to re-verify your identity on every consecutive app load.
               </li>
               <li>
-                <strong>PokéDex Bookmarks & Favorite Team Indexes (`dexoria_favorites` & `dexoria_user_favorites_*`):</strong> Saves the National Pokédex IDs of species you have flagged with the heart feature, allowing you to curate and review your tactical battle squads without making synchronous database requests.
+                <strong>PokéDex Bookmarks & Favorite Team Indexes (`dexoria_favorites` & `dexoria_user_favorites_*`):</strong> Saves the Pokédex IDs of species you have flagged with the heart feature, allowing you to curate and review your tactical battle squads without making synchronous database requests.
               </li>
               <li>
                 <strong>Global App Theme System parameters (`dexoria_theme`):</strong> Remembers whether your current optical display utilizes our dark solar starfield theme or our soft off-white light mode theme, matching your exact preferred ambient brightness settings.

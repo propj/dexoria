@@ -26,6 +26,36 @@ const POPULAR_POKEMON_TYPES: Record<number, string[]> = {
   906: ["grass"], 909: ["fire"], 912: ["water"]
 };
 
+// Pre-filled Japanese translations for starters and extremely popular Pokémon so they load instantly
+const PREFILLED_JA_NAMES: Record<number, string> = {
+  1: "フシギダネ", 2: "フシギソウ", 3: "フシギバナ",
+  4: "ヒトカゲ", 5: "リザード", 6: "リザードン",
+  7: "ゼニガメ", 8: "カメール", 9: "カメックス",
+  25: "ピカチュウ", 26: "ライチュウ",
+  133: "イーブイ", 134: "シャワーズ", 135: "サンダース", 136: "ブースター",
+  150: "ミュウツー", 151: "ミュウ",
+  152: "チコリータ", 153: "ベイリーフ", 154: "メガニウム",
+  155: "ヒノアラシ", 156: "マグマラシ", 157: "バクフーン",
+  158: "ワニノコ", 159: "アリゲイツ", 160: "オーダイル",
+  196: "エーフィ", 197: "ブラッキー",
+  252: "キモリ", 253: "ジュプトル", 254: "ジュカイン",
+  255: "アチャモ", 256: "ワカシャモ", 257: "バシャーモ",
+  258: "ミズゴロウ", 259: "ヌマクロー", 260: "ラグラージ",
+  387: "ナエトル", 388: "ハヤシガメ", 389: "ドダイトス",
+  390: "ヒコザル", 391: "モウカザル", 392: "ゴウカザル",
+  393: "ポッチャマ", 394: "ポッタイシ", 395: "エンペルト",
+  470: "リーフィア", 471: "グレイシア",
+  495: "ツタージャ", 496: "ジャノビー", 497: "ジャローダ",
+  498: "ポカブ", 499: "チャオブー", 500: "エンブオー",
+  501: "ミジュマル", 502: "フタチマル", 503: "ダイケンキ",
+  650: "ハリマロン", 651: "ハリボーグ", 652: "ブリガロン",
+  653: "フォッコ", 654: "テールナー", 655: "マフォクシー",
+  656: "ケロマツ", 657: "ゲコガシラ", 658: "ゲッコウガ",
+  722: "モクロー", 725: "ニャビー", 728: "アシマリ",
+  810: "サルノリ", 813: "ヒバニー", 816: "メッソン",
+  906: "ニャオハ", 909: "ホゲータ", 912: "クワッス"
+};
+
 export default function PokemonGrid({
   isLightTheme,
   favorites,
@@ -36,6 +66,7 @@ export default function PokemonGrid({
   const [allPokemon, setAllPokemon] = useState<{ id: number; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [typesCache, setTypesCache] = useState<Record<number, string[]>>(POPULAR_POKEMON_TYPES);
+  const [japaneseNames, setJapaneseNames] = useState<Record<number, string>>(PREFILLED_JA_NAMES);
   const [visibleCount, setVisibleCount] = useState(24);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
@@ -50,7 +81,7 @@ export default function PokemonGrid({
     const fetchPokemonList = async () => {
       try {
         setLoading(true);
-        // Fetching up to Gen 9 limit of national pokedex (1025)
+        // Fetching up to Gen 9 limit of pokedex (1025)
         const res = await fetch("https://pokeapi.co/api/v2/pokemon?limit=1025");
         const data = await res.json();
         
@@ -144,28 +175,49 @@ export default function PokemonGrid({
     return filteredPokemon.slice(0, visibleCount);
   }, [filteredPokemon, visibleCount]);
 
-  // Function to lazy-load the types of a specific Pokémon
-  const fetchTypesForId = async (id: number) => {
-    if (typesCache[id]) return; // Already cached
-    try {
-      const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
-      if (!res.ok) return;
-      const data = await res.json();
-      const types = data.types.map((t: any) => t.type.name);
-      setTypesCache((prev) => ({ ...prev, [id]: types }));
-    } catch (err) {
-      // Fail silently
+  // Function to lazy-load the types and Japanese name of a specific Pokémon
+  const fetchExtraDataForId = async (id: number) => {
+    // 1. Fetch Types if not in typesCache
+    if (!typesCache[id]) {
+      try {
+        const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
+        if (res.ok) {
+          const data = await res.json();
+          const types = data.types.map((t: any) => t.type.name);
+          setTypesCache((prev) => ({ ...prev, [id]: types }));
+        }
+      } catch (err) {
+        // Fail silently
+      }
+    }
+
+    // 2. Fetch Japanese Name if not in japaneseNames
+    if (!japaneseNames[id]) {
+      try {
+        const res = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${id}`);
+        if (res.ok) {
+          const data = await res.json();
+          const jaNameObj = data.names.find(
+            (n: any) => n.language.name === "ja-Hrkt" || n.language.name === "ja" || n.language.name === "roomaji"
+          );
+          if (jaNameObj) {
+            setJapaneseNames((prev) => ({ ...prev, [id]: jaNameObj.name }));
+          }
+        }
+      } catch (err) {
+        // Fail silently
+      }
     }
   };
 
-  // Trigger loading types of currently displayed Pokémon
+  // Trigger loading types and Japanese names of currently displayed Pokémon
   useEffect(() => {
     displayedPokemon.forEach((p) => {
-      if (!typesCache[p.id]) {
-        fetchTypesForId(p.id);
+      if (!typesCache[p.id] || !japaneseNames[p.id]) {
+        fetchExtraDataForId(p.id);
       }
     });
-  }, [displayedPokemon, typesCache]);
+  }, [displayedPokemon, typesCache, japaneseNames]);
 
   const loadMore = () => {
     setVisibleCount((prev) => prev + 24);
@@ -218,7 +270,7 @@ export default function PokemonGrid({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by Pokémon name or national number..."
+              placeholder="Search by Pokémon name or Pokédex number..."
               className={`w-full pl-11 pr-4 py-3 rounded-xl border text-sm outline-none transition-all ${
                 isLightTheme
                   ? "bg-slate-50 border-slate-200 text-slate-900 focus:border-blue-500 focus:bg-white"
@@ -340,10 +392,10 @@ export default function PokemonGrid({
                 }
                 className={`group rounded-3xl p-5 border cursor-pointer relative flex flex-col justify-between h-[270px] transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-${primaryType}/20 overflow-hidden select-none`}
               >
-                {/* Big number size behind / overlaying top-right */}
+                {/* Number overlaying top-right - larger */}
                 <span 
-                  className={`absolute top-2.5 right-4 font-mono font-black text-4xl md:text-5xl tracking-tighter select-none transition-all duration-500 group-hover:scale-105 ${
-                    isLightTheme ? "text-slate-900/10" : "text-white/10"
+                  className={`absolute top-3 right-4 font-mono font-extrabold text-sm sm:text-base tracking-wider select-none transition-all duration-300 ${
+                    isLightTheme ? "text-slate-900/35" : "text-white/35"
                   }`}
                 >
                   #{poke.id.toString().padStart(4, "0")}
@@ -355,7 +407,7 @@ export default function PokemonGrid({
                     e.stopPropagation(); // Prevent modal opening
                     toggleFavorite(poke.id);
                   }}
-                  className={`absolute top-4 left-4 p-1.5 rounded-xl cursor-pointer transition-all z-20 ${
+                  className={`absolute top-3 left-4 p-1.5 rounded-xl cursor-pointer transition-all z-20 ${
                     isFav
                       ? "text-red-500 bg-red-500/10"
                       : "text-slate-400 hover:text-red-500 hover:bg-red-500/10"
@@ -372,6 +424,22 @@ export default function PokemonGrid({
                     className="absolute w-32 h-32 rounded-full opacity-20 filter blur-2xl transition-all duration-500 group-hover:scale-135"
                     style={{ backgroundColor: typeColor }}
                   />
+
+                  {/* Japanese name backdrop - static */}
+                  {japaneseNames[poke.id] && (
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0 overflow-hidden">
+                      <span 
+                        className={`font-sans font-black text-5xl sm:text-6xl tracking-wider uppercase whitespace-nowrap transition-all duration-500 group-hover:scale-105 ${
+                          isLightTheme 
+                            ? "text-slate-900/[0.08]" 
+                            : "text-white/[0.06]"
+                        }`}
+                      >
+                        {japaneseNames[poke.id]}
+                      </span>
+                    </div>
+                  )}
+
                   <img
                     src={getArtworkUrl(poke.id)}
                     alt={poke.name}
