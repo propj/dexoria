@@ -53,28 +53,46 @@ export default function App() {
     }
   }, []);
 
-  // Load page state from URL on mount and handle hash changes
+  // Load page state from URL on mount and handle state pop/change events
   useEffect(() => {
     const handleUrlSync = () => {
-      // Look at search params first
+      // First, check if there's an old-style hash URL and convert it to clean URL if needed
+      if (window.location.hash) {
+        const rawHash = window.location.hash.substring(1).replace(/^\/|\/$/g, "");
+        if (rawHash) {
+          const parts = rawHash.split("/");
+          const page = parts[0];
+          const sub = parts[1] || "";
+          
+          let cleanPath = `/${page}`;
+          if (sub) {
+            cleanPath += `/${sub}`;
+          }
+          
+          // Replace hash URL with clean pathname URL
+          window.history.replaceState(null, "", cleanPath);
+        }
+      }
+
+      // Read from clean pathname
+      let pathname = window.location.pathname.replace(/^\/|\/$/g, "");
       const params = new URLSearchParams(window.location.search);
       const pageParam = params.get("page");
-      
-      // Look at hash next
-      const rawHash = window.location.hash.substring(1); // e.g., "regions/kanto", "national/compare", "home"
-      const hashParts = rawHash.split("/");
-      const hashPage = hashParts[0];
-      const hashSub = hashParts[1];
-      
-      const targetPage = pageParam || hashPage;
+
+      // e.g., "/regions/kanto" -> parts = ["regions", "kanto"]
+      const parts = pathname.split("/");
+      const pathPage = parts[0] || "home";
+      const pathSub = parts[1] || "";
+
+      const targetPage = pageParam || pathPage;
       const validPages = ["home", "regions", "national", "characters", "poke-ai", "timeline", "fun", "about", "favorites"];
-      
-      if (targetPage && validPages.includes(targetPage)) {
+
+      if (validPages.includes(targetPage)) {
         setActivePage(targetPage);
-        
+
         if (targetPage === "regions") {
-          if (hashSub) {
-            const foundRegion = REGIONS_DATA.find(r => r.id.toLowerCase() === hashSub.toLowerCase());
+          if (pathSub) {
+            const foundRegion = REGIONS_DATA.find(r => r.id.toLowerCase() === pathSub.toLowerCase());
             if (foundRegion) {
               setSelectedRegion(foundRegion);
             } else {
@@ -84,40 +102,58 @@ export default function App() {
             setSelectedRegion(null);
           }
         } else if (targetPage === "national") {
-          if (hashSub && ["dex", "types", "compare"].includes(hashSub)) {
-            setNationalSubTab(hashSub as any);
+          if (pathSub && ["dex", "types", "compare"].includes(pathSub)) {
+            setNationalSubTab(pathSub as any);
           } else {
             const tabParam = params.get("tab");
             if (tabParam && ["dex", "types", "compare"].includes(tabParam)) {
               setNationalSubTab(tabParam as any);
+            } else {
+              setNationalSubTab("dex");
             }
           }
         }
-      } else if (rawHash === "") {
+      } else {
+        // Fallback for unrecognized paths
         setActivePage("home");
         setSelectedRegion(null);
       }
     };
 
     handleUrlSync();
+    window.addEventListener("popstate", handleUrlSync);
     window.addEventListener("hashchange", handleUrlSync);
-    return () => window.removeEventListener("hashchange", handleUrlSync);
+    
+    return () => {
+      window.removeEventListener("popstate", handleUrlSync);
+      window.removeEventListener("hashchange", handleUrlSync);
+    };
   }, []);
 
-  // Update URL hash when activePage, selectedRegion, or nationalSubTab changes
+  // Update URL pathname when activePage, selectedRegion, or nationalSubTab changes
   useEffect(() => {
-    if (activePage === "home") {
-      if (window.location.hash) {
-        window.history.replaceState(null, "", "/");
-      }
-    } else {
-      let path = activePage;
+    let newPath = "/";
+    if (activePage !== "home") {
+      newPath = `/${activePage}`;
       if (activePage === "regions" && selectedRegion) {
-        path += `/${selectedRegion.id}`;
+        newPath += `/${selectedRegion.id.toLowerCase()}`;
       } else if (activePage === "national") {
-        path += `/${nationalSubTab}`;
+        newPath += `/${nationalSubTab}`;
       }
-      window.history.replaceState(null, "", `#${path}`);
+    }
+
+    const currentPath = window.location.pathname;
+    
+    if (currentPath !== newPath && currentPath !== newPath + "/") {
+      // Use pushState to allow back-button navigation if user clicks navbar links
+      // But if they are just on the same page and changing national subtabs, or initial load, replaceState is cleaner
+      const isInitialOrInnerChange = currentPath === "/" || (currentPath.startsWith("/national") && newPath.startsWith("/national"));
+      
+      if (isInitialOrInnerChange) {
+        window.history.replaceState(null, "", newPath);
+      } else {
+        window.history.pushState(null, "", newPath);
+      }
     }
   }, [activePage, selectedRegion, nationalSubTab]);
 
