@@ -1,5 +1,5 @@
-import React from "react";
-import { Info, Cpu, Coins, MessageSquare, Sparkles } from "lucide-react";
+import React, { useState } from "react";
+import { Info, Cpu, Coins, MessageSquare, Sparkles, Mail, Copy, Check, ExternalLink } from "lucide-react";
 
 // Import the generated QR code image
 // @ts-ignore
@@ -10,6 +10,14 @@ interface AboutSectionProps {
 }
 
 export default function AboutSection({ isLightTheme }: AboutSectionProps) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyEmail = () => {
+    navigator.clipboard.writeText("dexoriasupporthelp@gmail.com");
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
     <div className="max-w-3xl mx-auto px-4 md:px-8 py-6 space-y-8 select-none">
       {/* 1. About Core Card */}
@@ -141,20 +149,63 @@ export default function AboutSection({ isLightTheme }: AboutSectionProps) {
           </div>
         </div>
 
-        <div className={`p-6 rounded-2xl border text-center py-8 ${
+        <div className={`p-6 md:p-8 rounded-2xl border text-center relative overflow-hidden transition-all duration-300 ${
           isLightTheme
-            ? "bg-blue-50/40 border-blue-200/60 text-slate-700"
-            : "bg-blue-950/10 border-blue-500/20 text-slate-300"
+            ? "bg-blue-50/30 border-blue-200/50 text-slate-800"
+            : "bg-blue-950/5 border-blue-500/10 text-slate-300"
         }`}>
-          <p className="text-sm md:text-base font-semibold leading-relaxed">
-            for any queries or feedback pls emal us on{" "}
-            <a 
-              href="mailto:dexoriasupporthelp@gmail.com" 
-              className="text-blue-500 hover:text-blue-400 font-bold transition-colors underline decoration-2 underline-offset-4"
-            >
-              dexoriasupporthelp@gmail.com
-            </a>
+          {/* Decorative floating mail icon in background */}
+          <div className="absolute right-4 bottom-2 opacity-[0.03] pointer-events-none">
+            <Mail className="w-32 h-32" />
+          </div>
+
+          <p className="text-sm md:text-base font-medium leading-relaxed max-w-md mx-auto mb-6">
+            For any queries, feature requests, or general feedback, please email us at:
           </p>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 max-w-lg mx-auto">
+            {/* Interactive Email Badge */}
+            <div className={`flex items-center gap-2 px-4 py-3 rounded-2xl border font-mono text-xs sm:text-sm font-bold w-full sm:w-auto justify-between sm:justify-start ${
+              isLightTheme
+                ? "bg-white border-slate-200 text-slate-800"
+                : "bg-slate-900/80 border-white/10 text-slate-200"
+            }`}>
+              <div className="flex items-center gap-2">
+                <Mail className="w-4 h-4 text-blue-500 shrink-0" />
+                <span>dexoriasupporthelp@gmail.com</span>
+              </div>
+              
+              {/* Copy button inline */}
+              <button
+                onClick={handleCopyEmail}
+                className={`p-1.5 rounded-lg border transition-all shrink-0 ${
+                  copied
+                    ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-500"
+                    : isLightTheme
+                      ? "bg-slate-50 border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-100"
+                      : "bg-slate-800/80 border-slate-700/50 text-slate-400 hover:text-slate-200 hover:bg-slate-700"
+                }`}
+                title="Copy email to clipboard"
+              >
+                {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+              </button>
+            </div>
+
+            {/* Direct Send Action Button */}
+            <a
+              href="mailto:dexoriasupporthelp@gmail.com"
+              className="flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm transition-all duration-300 hover:-translate-y-0.5 shadow-md shadow-blue-500/10 hover:shadow-blue-500/25 w-full sm:w-auto"
+            >
+              <span>Send Email</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          </div>
+
+          {copied && (
+            <p className="text-[11px] text-emerald-500 font-bold mt-3">
+              Email copied to clipboard!
+            </p>
+          )}
         </div>
       </div>
     </div>

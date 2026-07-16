@@ -10,6 +10,7 @@ import TimelineSection from "./components/TimelineSection";
 import FunSection from "./components/FunSection";
 import FavoritesSection from "./components/FavoritesSection";
 import AboutSection from "./components/AboutSection";
+import TeamBuilderSection from "./components/TeamBuilderSection";
 import Footer from "./components/Footer";
 import { CookieBanner, PrivacyPolicyModal, TermsOfServicesModal } from "./components/LegalModals";
 import { Region } from "./types";
@@ -22,7 +23,7 @@ export default function App() {
   const [isLightTheme, setIsLightTheme] = useState<boolean>(false);
   
   // Nested sub-tabs inside Pokédex page
-  const [nationalSubTab, setNationalSubTab] = useState<"dex" | "types" | "compare">("dex");
+  const [nationalSubTab, setNationalSubTab] = useState<"dex" | "types" | "compare" | "team">("dex");
   
   // Favorites State synced to LocalStorage
   const [favorites, setFavorites] = useState<number[]>([]);
@@ -102,11 +103,11 @@ export default function App() {
             setSelectedRegion(null);
           }
         } else if (targetPage === "national") {
-          if (pathSub && ["dex", "types", "compare"].includes(pathSub)) {
+          if (pathSub && ["dex", "types", "compare", "team"].includes(pathSub)) {
             setNationalSubTab(pathSub as any);
           } else {
             const tabParam = params.get("tab");
-            if (tabParam && ["dex", "types", "compare"].includes(tabParam)) {
+            if (tabParam && ["dex", "types", "compare", "team"].includes(tabParam)) {
               setNationalSubTab(tabParam as any);
             } else {
               setNationalSubTab("dex");
@@ -572,14 +573,14 @@ export default function App() {
               <div className={`p-1 rounded-2xl flex gap-1 border ${
                 isLightTheme ? "bg-[#EFEAE2] border-[#E5DDD0]/50" : "bg-[#151516] border-white/5"
               }`}>
-                {(["dex", "types", "compare"] as const).map((tab) => {
-                  const label = tab === "dex" ? "Pokédex" : tab === "types" ? "Elemental Types" : "Compare";
+                {(["dex", "types", "compare", "team"] as const).map((tab) => {
+                  const label = tab === "dex" ? "Pokédex" : tab === "types" ? "Elemental Types" : tab === "compare" ? "Compare" : "Team Builder";
                   const isActive = nationalSubTab === tab;
                   return (
                     <button
                       key={tab}
                       onClick={() => setNationalSubTab(tab)}
-                      className={`px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider cursor-pointer transition-all ${
+                      className={`px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider cursor-pointer transition-all flex items-center gap-1.5 ${
                         isActive
                           ? isLightTheme
                             ? "bg-white text-slate-900 shadow-sm border border-slate-200/50"
@@ -589,7 +590,12 @@ export default function App() {
                           : "text-slate-400 hover:text-white hover:bg-white/5"
                       }`}
                     >
-                      {label}
+                      <span>{label}</span>
+                      {tab === "team" && (
+                        <span className="text-[10px] font-black lowercase text-blue-500 dark:text-blue-400 tracking-normal animate-pulse drop-shadow-[0_0_6px_rgba(59,130,246,0.85)]">
+                          new!
+                        </span>
+                      )}
                     </button>
                   );
                 })}
@@ -652,6 +658,17 @@ export default function App() {
                 </div>
                 <CompareSection
                   isLightTheme={isLightTheme}
+                  onSelectPokemonById={handleSelectPokemonById}
+                />
+              </div>
+            )}
+
+            {nationalSubTab === "team" && (
+              <div>
+                <TeamBuilderSection
+                  isLightTheme={isLightTheme}
+                  favorites={favorites}
+                  toggleFavorite={toggleFavorite}
                   onSelectPokemonById={handleSelectPokemonById}
                 />
               </div>
