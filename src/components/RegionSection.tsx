@@ -260,7 +260,11 @@ export default function RegionSection({
     const trainText = Array(12).fill(japName).join("  •  ");
     return (
       <div className="absolute inset-0 pointer-events-none overflow-hidden flex items-center select-none z-0">
-        <div className="flex w-max shrink-0 animate-marquee text-5xl md:text-7xl font-sans font-black tracking-widest text-slate-500 dark:text-white opacity-[0.12] dark:opacity-[0.08] uppercase whitespace-nowrap gap-16">
+        <div className={`flex w-max shrink-0 animate-marquee text-5xl md:text-7xl font-sans font-black tracking-widest uppercase whitespace-nowrap gap-16 ${
+          isLightTheme 
+            ? "text-blue-600/[0.22]" 
+            : "text-white/[0.08]"
+        }`}>
           <span>{trainText}</span>
           <span>{trainText}</span>
         </div>
@@ -290,6 +294,13 @@ export default function RegionSection({
     if (!scrollContainer) return;
 
     const animateScroll = (time: number) => {
+      // Do not scroll on mobile/tablet viewports (screen width < 768)
+      if (typeof window !== "undefined" && window.innerWidth < 768) {
+        lastTime = time;
+        animationFrameId = requestAnimationFrame(animateScroll);
+        return;
+      }
+
       if (!isHovered) {
         const delta = (time - lastTime) / 16; // Normalise to 60fps
         lastTime = time;
@@ -543,7 +554,7 @@ export default function RegionSection({
               </div>
               <div>
                 <p className="text-[10px] font-mono text-slate-500 uppercase tracking-widest font-bold">Resident Professor</p>
-                <h4 className="font-display font-extrabold text-sm text-slate-100 mt-0.5">{selectedRegion.professor}</h4>
+                <h4 className={`font-display font-extrabold text-sm mt-0.5 ${isLightTheme ? "text-slate-900" : "text-slate-100"}`}>{selectedRegion.professor}</h4>
               </div>
             </div>
             <p className="text-xs text-slate-400 leading-relaxed font-medium">
@@ -563,7 +574,7 @@ export default function RegionSection({
               </div>
               <div>
                 <p className="text-[10px] font-mono text-slate-500 uppercase tracking-widest font-bold">Regional Champion</p>
-                <h4 className="font-display font-extrabold text-sm text-slate-100 mt-0.5">{selectedRegion.champion}</h4>
+                <h4 className={`font-display font-extrabold text-sm mt-0.5 ${isLightTheme ? "text-slate-900" : "text-slate-100"}`}>{selectedRegion.champion}</h4>
               </div>
             </div>
             <p className="text-xs text-slate-400 leading-relaxed font-medium">
@@ -583,7 +594,7 @@ export default function RegionSection({
               </div>
               <div>
                 <p className="text-[10px] font-mono text-slate-500 uppercase tracking-widest font-bold">Notable Villain Syndicate</p>
-                <h4 className="font-display font-extrabold text-sm text-slate-100 mt-0.5">{details.villainName}</h4>
+                <h4 className={`font-display font-extrabold text-sm mt-0.5 ${isLightTheme ? "text-slate-900" : "text-slate-100"}`}>{details.villainName}</h4>
               </div>
             </div>
             <p className="text-xs text-slate-400 leading-relaxed font-medium">
@@ -629,10 +640,12 @@ export default function RegionSection({
                     <span className="text-[10px] font-mono font-bold text-slate-500 block">
                       #{starter.id.toString().padStart(4, "0")}
                     </span>
-                    <h3 className="font-display font-black text-xl text-white tracking-tight mt-0.5">
+                    <h3 className={`font-display font-black text-xl tracking-tight mt-0.5 ${
+                      isLightTheme ? "text-slate-900" : "text-white"
+                    }`}>
                       {starter.name}
                     </h3>
-                    <p className="text-[10px] font-mono text-blue-400 uppercase font-bold mt-1">
+                    <p className="text-[10px] font-mono text-blue-500 dark:text-blue-400 uppercase font-bold mt-1">
                       {starter.category}
                     </p>
                   </div>
@@ -640,7 +653,11 @@ export default function RegionSection({
                     {starter.types.map((t) => (
                       <span
                         key={t}
-                        className="text-[9px] font-bold font-mono px-2 py-0.5 rounded-full uppercase bg-white/5 border border-white/10 text-slate-300"
+                        className={`text-[9px] font-bold font-mono px-2 py-0.5 rounded-full uppercase border ${
+                          isLightTheme
+                            ? "bg-slate-50 border-slate-200 text-slate-700"
+                            : "bg-white/5 border-white/10 text-slate-300"
+                        }`}
                       >
                         {t}
                       </span>
@@ -660,22 +677,24 @@ export default function RegionSection({
 
                 {/* Stats details bar */}
                 <div className="relative z-10 space-y-2 mt-auto">
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[10px] border-t border-white/5 pt-3">
+                  <div className={`grid grid-cols-2 gap-x-4 gap-y-1.5 text-[10px] border-t pt-3 ${
+                    isLightTheme ? "border-slate-100" : "border-white/5"
+                  }`}>
                     <div className="flex justify-between">
                       <span className="text-slate-500 font-bold uppercase font-mono">HP</span>
-                      <span className="text-slate-200 font-bold">{starter.stats.hp}</span>
+                      <span className={`font-bold ${isLightTheme ? "text-slate-800" : "text-slate-200"}`}>{starter.stats.hp}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-slate-500 font-bold uppercase font-mono">Speed</span>
-                      <span className="text-slate-200 font-bold">{starter.stats.speed}</span>
+                      <span className={`font-bold ${isLightTheme ? "text-slate-800" : "text-slate-200"}`}>{starter.stats.speed}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-slate-500 font-bold uppercase font-mono">Atk</span>
-                      <span className="text-slate-200 font-bold">{starter.stats.attack}</span>
+                      <span className={`font-bold ${isLightTheme ? "text-slate-800" : "text-slate-200"}`}>{starter.stats.attack}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-slate-500 font-bold uppercase font-mono">Def</span>
-                      <span className="text-slate-200 font-bold">{starter.stats.defense}</span>
+                      <span className={`font-bold ${isLightTheme ? "text-slate-800" : "text-slate-200"}`}>{starter.stats.defense}</span>
                     </div>
                   </div>
                 </div>
@@ -712,11 +731,13 @@ export default function RegionSection({
                     <span className="text-[10px] font-mono font-bold text-slate-500 block">
                       #{legend.id.toString().padStart(4, "0")}
                     </span>
-                    <h3 className="font-display font-black text-lg text-white tracking-tight mt-0.5">
+                    <h3 className={`font-display font-black text-lg tracking-tight mt-0.5 ${
+                      isLightTheme ? "text-slate-900" : "text-white"
+                    }`}>
                       {legend.name}
                     </h3>
                   </div>
-                  <span className="text-[9px] font-mono font-extrabold px-2 py-0.5 rounded-full uppercase bg-amber-500/10 border border-amber-500/20 text-amber-400">
+                  <span className="text-[9px] font-mono font-extrabold px-2 py-0.5 rounded-full uppercase bg-amber-500/10 border border-amber-500/20 text-amber-500 dark:text-amber-400">
                     LEGENDARY
                   </span>
                 </div>
@@ -730,7 +751,9 @@ export default function RegionSection({
                   />
                 </div>
 
-                <p className="text-[11px] text-slate-400 leading-relaxed line-clamp-3 text-center mb-1">
+                <p className={`text-[11px] leading-relaxed line-clamp-3 text-center mb-1 ${
+                  isLightTheme ? "text-slate-600" : "text-slate-400"
+                }`}>
                   {legend.description}
                 </p>
               </div>
@@ -766,17 +789,21 @@ export default function RegionSection({
                   </div>
 
                   <div>
-                    <h4 className="font-display font-black text-base text-white tracking-tight">
+                    <h4 className={`font-display font-black text-base tracking-tight ${
+                      isLightTheme ? "text-slate-900" : "text-white"
+                    }`}>
                       {gym.name}
                     </h4>
-                    <p className="text-[10px] font-mono font-bold text-blue-400 uppercase mt-0.5">
+                    <p className="text-[10px] font-mono font-bold text-blue-500 dark:text-blue-400 uppercase mt-0.5">
                       {gym.typeSpecialty} Specialist
                     </p>
                   </div>
 
-                  <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-[10px] font-mono">
-                    <span className="text-slate-400 font-bold uppercase">Badge</span>
-                    <span className="text-slate-200 font-bold">{gym.badgeName}</span>
+                  <div className={`mt-4 pt-3 border-t flex items-center justify-between text-[10px] font-mono ${
+                    isLightTheme ? "border-slate-100" : "border-white/5"
+                  }`}>
+                    <span className="text-slate-500 dark:text-slate-400 font-bold uppercase">Badge</span>
+                    <span className={`font-bold ${isLightTheme ? "text-slate-800" : "text-slate-200"}`}>{gym.badgeName}</span>
                   </div>
                 </div>
               ))}
@@ -803,14 +830,22 @@ export default function RegionSection({
                   placeholder="Search species..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 pr-4 py-2 text-xs rounded-xl bg-slate-900 border border-white/10 text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 w-full sm:w-48"
+                  className={`pl-10 pr-4 py-2 text-xs rounded-xl border focus:outline-none focus:ring-1 focus:ring-blue-500 w-full sm:w-48 ${
+                    isLightTheme
+                      ? "bg-white border-slate-200 text-slate-800 placeholder-slate-400"
+                      : "bg-slate-900 border-white/10 text-white placeholder-slate-400"
+                  }`}
                 />
               </div>
 
               <select
                 value={selectedType}
                 onChange={(e) => setSelectedType(e.target.value)}
-                className="px-4 py-2 text-xs rounded-xl bg-slate-900 border border-white/10 text-white focus:outline-none font-bold"
+                className={`px-4 py-2 text-xs rounded-xl border focus:outline-none font-bold ${
+                  isLightTheme
+                    ? "bg-white border-slate-200 text-slate-800"
+                    : "bg-slate-900 border-white/10 text-white"
+                }`}
               >
                 <option value="all">All Types</option>
                 <option value="grass">Grass</option>
@@ -846,7 +881,9 @@ export default function RegionSection({
                     className="w-16 h-16 object-contain my-1.5 group-hover:scale-110 transition-transform duration-200"
                   />
 
-                  <h4 className="text-xs font-bold text-slate-200 text-center truncate w-full">
+                  <h4 className={`text-xs font-bold text-center truncate w-full ${
+                    isLightTheme ? "text-slate-800" : "text-slate-200"
+                  }`}>
                     {pkmn.name}
                   </h4>
                 </div>

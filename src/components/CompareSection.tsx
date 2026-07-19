@@ -186,9 +186,9 @@ export default function CompareSection({ isLightTheme, onSelectPokemonById }: Co
             </select>
           </div>
 
-          {/* Table display */}
+          {/* Desktop Table display (hidden on mobile) */}
           <div
-            className={`glass p-4 rounded-3xl border overflow-x-auto shadow-xl ${
+            className={`hidden sm:block glass p-4 rounded-3xl border overflow-x-auto shadow-xl ${
               isLightTheme
                 ? "bg-white/70 border-slate-300/40 text-slate-900 shadow-slate-200"
                 : "bg-slate-950/40 border-white/5 text-slate-100"
@@ -319,6 +319,115 @@ export default function CompareSection({ isLightTheme, onSelectPokemonById }: Co
                 </tr>
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile Comparison View (Visible only on mobile, stacked layout) */}
+          <div className="block sm:hidden space-y-4 px-1">
+            {/* Slogan / Name block */}
+            <div className={`p-4 rounded-2xl border ${
+              isLightTheme ? "bg-white border-slate-200 shadow-sm text-slate-900" : "bg-slate-950/40 border-white/5 text-slate-100"
+            }`}>
+              <div className="grid grid-cols-2 gap-4 text-center">
+                <div>
+                  <span className="text-[9px] font-mono font-bold text-slate-500 uppercase">Region A</span>
+                  <h3 className="font-display font-extrabold text-lg" style={{ color: regionA.color }}>{regionA.name}</h3>
+                </div>
+                <div className="border-l border-slate-500/10">
+                  <span className="text-[9px] font-mono font-bold text-slate-500 uppercase">Region B</span>
+                  <h3 className="font-display font-extrabold text-lg" style={{ color: regionB.color }}>{regionB.name}</h3>
+                </div>
+              </div>
+            </div>
+
+            {/* Comparison Rows */}
+            {[
+              { label: "Generation", valA: `Gen ${regionA.generationIndex}`, valB: `Gen ${regionB.generationIndex}` },
+              { label: "Native Name", valA: regionA.nativeName, valB: regionB.nativeName, mono: true },
+              { label: "Professor", valA: regionA.professor, valB: regionB.professor },
+              { label: "Champion", valA: regionA.champion, valB: regionB.champion },
+              { 
+                label: "Gym Badges", 
+                valA: regionA.badgeCount > 0 ? `${regionA.badgeCount} Badges` : "None (Trials)", 
+                valB: regionB.badgeCount > 0 ? `${regionB.badgeCount} Badges` : "None (Trials)" 
+              },
+              { label: "Capital City", valA: regionA.mainCity, valB: regionB.mainCity },
+            ].map((item, idx) => (
+              <div key={idx} className={`p-4 rounded-2xl border ${
+                isLightTheme ? "bg-white border-slate-200 shadow-sm text-slate-900" : "bg-slate-950/40 border-white/5 text-slate-100"
+              }`}>
+                <p className="text-[10px] font-mono font-black text-slate-500 uppercase tracking-wider text-center mb-2">{item.label}</p>
+                <div className="grid grid-cols-2 gap-4 text-center text-xs">
+                  <div className={`font-semibold ${item.mono ? "font-mono text-[10px]" : ""}`} style={{ color: idx === 1 ? undefined : regionA.color }}>
+                    {item.valA}
+                  </div>
+                  <div className={`font-semibold border-l border-slate-500/10 ${item.mono ? "font-mono text-[10px]" : ""}`} style={{ color: idx === 1 ? undefined : regionB.color }}>
+                    {item.valB}
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {/* Core Games - Custom block */}
+            <div className={`p-4 rounded-2xl border ${
+              isLightTheme ? "bg-white border-slate-200 shadow-sm text-slate-900" : "bg-slate-950/40 border-white/5 text-slate-100"
+            }`}>
+              <p className="text-[10px] font-mono font-black text-slate-500 uppercase tracking-wider text-center mb-3">Core Games</p>
+              <div className="grid grid-cols-2 gap-4 text-xs">
+                <div className="flex flex-wrap gap-1 justify-center">
+                  {regionA.games.map((g) => (
+                    <span key={g} className="px-2 py-0.5 rounded text-[9px] bg-slate-500/10 border border-slate-500/20 text-slate-400 font-semibold">{g}</span>
+                  ))}
+                </div>
+                <div className="flex flex-wrap gap-1 justify-center border-l border-slate-500/10">
+                  {regionB.games.map((g) => (
+                    <span key={g} className="px-2 py-0.5 rounded text-[9px] bg-slate-500/10 border border-slate-500/20 text-slate-400 font-semibold">{g}</span>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Starters - Custom block */}
+            <div className={`p-4 rounded-2xl border ${
+              isLightTheme ? "bg-white border-slate-200 shadow-sm text-slate-900" : "bg-slate-950/40 border-white/5 text-slate-100"
+            }`}>
+              <p className="text-[10px] font-mono font-black text-slate-500 uppercase tracking-wider text-center mb-3">Starter Partners</p>
+              <div className="grid grid-cols-2 gap-4 text-xs">
+                <div className="flex flex-col gap-2.5 items-center">
+                  {regionA.starters.map((starter, i) => (
+                    <button
+                      key={starter}
+                      onClick={() => onSelectPokemonById(regionA.starterIds[i])}
+                      className="font-bold text-[11px] text-blue-500 hover:underline flex items-center gap-1.5 group cursor-pointer"
+                    >
+                      <img
+                        src={getArtworkUrl(regionA.starterIds[i])}
+                        alt={starter}
+                        className="w-5 h-5 object-contain group-hover:scale-115 transition-transform"
+                        referrerPolicy="no-referrer"
+                      />
+                      <span>{starter}</span>
+                    </button>
+                  ))}
+                </div>
+                <div className="flex flex-col gap-2.5 items-center border-l border-slate-500/10">
+                  {regionB.starters.map((starter, i) => (
+                    <button
+                      key={starter}
+                      onClick={() => onSelectPokemonById(regionB.starterIds[i])}
+                      className="font-bold text-[11px] text-blue-500 hover:underline flex items-center gap-1.5 group cursor-pointer"
+                    >
+                      <img
+                        src={getArtworkUrl(regionB.starterIds[i])}
+                        alt={starter}
+                        className="w-5 h-5 object-contain group-hover:scale-115 transition-transform"
+                        referrerPolicy="no-referrer"
+                      />
+                      <span>{starter}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       ) : (

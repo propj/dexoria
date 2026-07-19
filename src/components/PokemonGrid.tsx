@@ -75,6 +75,7 @@ export default function PokemonGrid({
   const [selectedType, setSelectedType] = useState("");
   const [selectedGen, setSelectedGen] = useState("");
   const [sortOption, setSortOption] = useState("id-asc");
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   // Fetch index list of Pokémon on mount
   useEffect(() => {
@@ -263,27 +264,114 @@ export default function PokemonGrid({
               : "bg-slate-950/40 border-white/5 text-slate-100"
           }`}
         >
-          {/* Search bar */}
-          <div className="relative flex-1 min-w-[240px]">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by Pokémon name or Pokédex number..."
-              className={`w-full pl-11 pr-4 py-3 rounded-xl border text-sm outline-none transition-all ${
-                isLightTheme
-                  ? "bg-slate-50 border-slate-200 text-slate-900 focus:border-blue-500 focus:bg-white"
-                  : "bg-white/3 border-white/5 text-slate-100 focus:border-blue-500 focus:bg-slate-950"
+          {/* Search bar & filter toggle button */}
+          <div className="relative flex-1 min-w-[240px] flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search by Pokémon name or ID..."
+                className={`w-full pl-11 pr-4 py-3 rounded-xl border text-sm outline-none transition-all ${
+                  isLightTheme
+                    ? "bg-slate-50 border-slate-200 text-slate-900 focus:border-blue-500 focus:bg-white"
+                    : "bg-white/3 border-white/5 text-slate-100 focus:border-blue-500 focus:bg-slate-950"
+                }`}
+              />
+            </div>
+            
+            {/* Minimized filter toggle button on mobile */}
+            <button
+              type="button"
+              onClick={() => setShowMobileFilters(!showMobileFilters)}
+              className={`sm:hidden p-3 rounded-xl border flex items-center justify-center transition-all cursor-pointer h-[44px] w-[44px] ${
+                showMobileFilters
+                  ? "bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-500/20"
+                  : isLightTheme
+                  ? "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
+                  : "bg-slate-900 border-white/5 text-slate-300 hover:bg-white/5"
               }`}
-            />
+              title="Toggle filter criteria"
+            >
+              <SlidersHorizontal className="w-4 h-4" />
+            </button>
           </div>
 
-          {/* Type Filter */}
+          {/* Mobile Collapsible Filters Panel (Visible only when showMobileFilters is active) */}
+          <div className={`w-full grid grid-cols-1 gap-3.5 mt-2 sm:hidden transition-all duration-300 ease-in-out overflow-hidden ${
+            showMobileFilters ? "max-h-[500px] opacity-100 py-2.5" : "max-h-0 opacity-0 pointer-events-none"
+          }`}>
+            <div className="space-y-3 p-1">
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[10px] font-mono font-black text-slate-500 uppercase tracking-wider">Filter by Type</span>
+                <select
+                  value={selectedType}
+                  onChange={(e) => setSelectedType(e.target.value)}
+                  className={`w-full px-4 py-3 rounded-xl border text-sm outline-none cursor-pointer transition-all ${
+                    isLightTheme
+                      ? "bg-slate-50 border-slate-200 text-slate-700"
+                      : "bg-slate-900 border-white/5 text-slate-300"
+                  }`}
+                >
+                  <option value="">All Types</option>
+                  {TYPES_CHART.map((t) => (
+                    <option key={t.name} value={t.name} className="capitalize">
+                      {t.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[10px] font-mono font-black text-slate-500 uppercase tracking-wider">Select Generation</span>
+                <select
+                  value={selectedGen}
+                  onChange={(e) => setSelectedGen(e.target.value)}
+                  className={`w-full px-4 py-3 rounded-xl border text-sm outline-none cursor-pointer transition-all ${
+                    isLightTheme
+                      ? "bg-slate-50 border-slate-200 text-slate-700"
+                      : "bg-slate-900 border-white/5 text-slate-300"
+                  }`}
+                >
+                  <option value="">All Generations</option>
+                  <option value="1">Gen I (Kanto)</option>
+                  <option value="2">Gen II (Johto)</option>
+                  <option value="3">Gen III (Hoenn)</option>
+                  <option value="4">Gen IV (Sinnoh)</option>
+                  <option value="5">Gen V (Unova)</option>
+                  <option value="6">Gen VI (Kalos)</option>
+                  <option value="7">Gen VII (Alola)</option>
+                  <option value="8">Gen VIII (Galar / Hisui)</option>
+                  <option value="9">Gen IX (Paldea)</option>
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[10px] font-mono font-black text-slate-500 uppercase tracking-wider">Sort Results</span>
+                <select
+                  value={sortOption}
+                  onChange={(e) => setSortOption(e.target.value)}
+                  className={`w-full px-4 py-3 rounded-xl border text-sm outline-none cursor-pointer transition-all ${
+                    isLightTheme
+                      ? "bg-slate-50 border-slate-200 text-slate-700"
+                      : "bg-slate-900 border-white/5 text-slate-300"
+                  }`}
+                >
+                  <option value="id-asc">Pokédex # (Low to High)</option>
+                  <option value="id-desc">Pokédex # (High to Low)</option>
+                  <option value="name-asc">Alphabetical (A–Z)</option>
+                  <option value="name-desc">Alphabetical (Z–A)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Desktop Filters (Always visible on desktop, hidden on mobile) */}
           <select
             value={selectedType}
             onChange={(e) => setSelectedType(e.target.value)}
-            className={`px-4 py-3 rounded-xl border text-sm outline-none cursor-pointer transition-all ${
+            className={`hidden sm:block px-4 py-3 rounded-xl border text-sm outline-none cursor-pointer transition-all ${
               isLightTheme
                 ? "bg-slate-50 border-slate-200 text-slate-700"
                 : "bg-slate-900 border-white/5 text-slate-300"
@@ -297,11 +385,10 @@ export default function PokemonGrid({
             ))}
           </select>
 
-          {/* Generation Filter */}
           <select
             value={selectedGen}
             onChange={(e) => setSelectedGen(e.target.value)}
-            className={`px-4 py-3 rounded-xl border text-sm outline-none cursor-pointer transition-all ${
+            className={`hidden sm:block px-4 py-3 rounded-xl border text-sm outline-none cursor-pointer transition-all ${
               isLightTheme
                 ? "bg-slate-50 border-slate-200 text-slate-700"
                 : "bg-slate-900 border-white/5 text-slate-300"
@@ -319,11 +406,10 @@ export default function PokemonGrid({
             <option value="9">Gen IX (Paldea)</option>
           </select>
 
-          {/* Sorting Filter */}
           <select
             value={sortOption}
             onChange={(e) => setSortOption(e.target.value)}
-            className={`px-4 py-3 rounded-xl border text-sm outline-none cursor-pointer transition-all ${
+            className={`hidden sm:block px-4 py-3 rounded-xl border text-sm outline-none cursor-pointer transition-all ${
               isLightTheme
                 ? "bg-slate-50 border-slate-200 text-slate-700"
                 : "bg-slate-900 border-white/5 text-slate-300"
@@ -431,7 +517,7 @@ export default function PokemonGrid({
                       <span 
                         className={`font-sans font-black text-5xl sm:text-6xl tracking-wider uppercase whitespace-nowrap transition-all duration-500 group-hover:scale-105 ${
                           isLightTheme 
-                            ? "text-slate-900/[0.08]" 
+                            ? "text-blue-600/[0.22]" 
                             : "text-white/[0.06]"
                         }`}
                       >

@@ -245,8 +245,8 @@ export default function TimelineSection({ isLightTheme }: TimelineSectionProps) 
                 </p>
               </div>
 
-              {/* Navigation scroll handles */}
-              <div className="flex items-center gap-2.5">
+              {/* Navigation scroll handles (hidden on mobile) */}
+              <div className="hidden md:flex items-center gap-2.5">
                 <button
                   onClick={() => scrollMap("left")}
                   className={`p-3 rounded-xl border transition-all duration-300 cursor-pointer shadow-md hover:scale-105 active:scale-95 ${
@@ -272,10 +272,10 @@ export default function TimelineSection({ isLightTheme }: TimelineSectionProps) 
               </div>
             </div>
 
-            {/* Map Lanes Scroll container */}
+            {/* Map Lanes Scroll container (vertical stack on mobile, horizontal scroll on desktop) */}
             <div
               ref={scrollContainerRef}
-              className="w-full overflow-x-auto flex items-stretch gap-6 py-6 scrollbar-none snap-x snap-mandatory"
+              className="w-full flex flex-col md:flex-row items-center md:items-stretch gap-6 md:gap-8 py-6 md:overflow-x-auto scrollbar-none md:snap-x md:snap-mandatory"
               style={{ scrollSnapType: "x mandatory" }}
             >
               {GENERATIONS_DATA.map((gen, index) => {
@@ -287,7 +287,7 @@ export default function TimelineSection({ isLightTheme }: TimelineSectionProps) 
                     {/* Immersive interactive Map Node Card */}
                     <div 
                       onClick={() => setActivePageGenId(gen.id)}
-                      className={`snap-center shrink-0 w-[290px] sm:w-[330px] md:w-[360px] p-6 rounded-[32px] border transition-all duration-300 cursor-pointer relative group flex flex-col justify-between overflow-hidden ${
+                      className={`w-full max-w-[360px] md:snap-center md:shrink-0 md:w-[360px] p-6 rounded-[32px] border transition-all duration-300 cursor-pointer relative group flex flex-col justify-between overflow-hidden ${
                         isLightTheme
                           ? `bg-gradient-to-b from-white to-slate-100/50 hover:bg-white border-slate-300/60 shadow-lg hover:shadow-2xl hover:shadow-blue-500/10 hover:-translate-y-2`
                           : `bg-gradient-to-b from-slate-900/60 to-slate-950/90 border-white/5 shadow-2xl hover:border-blue-500/30 hover:shadow-blue-500/5 hover:-translate-y-2`
@@ -380,13 +380,25 @@ export default function TimelineSection({ isLightTheme }: TimelineSectionProps) 
 
                     {/* Connecting Map arrow between cards */}
                     {index < GENERATIONS_DATA.length - 1 && (
-                      <div className="shrink-0 flex flex-col items-center justify-center text-slate-600/30 px-1 select-none">
-                        <span className="text-[10px] font-mono font-extrabold text-blue-500/25 tracking-widest uppercase mb-1">CONNECTING</span>
-                        <div className="flex items-center">
-                          <div className="w-8 md:w-12 h-[2px] bg-gradient-to-r from-blue-500/20 via-blue-500/40 to-blue-500/20" />
-                          <ArrowRight className="w-5 h-5 text-blue-500/50 animate-pulse" />
+                      <>
+                        {/* Desktop Connector */}
+                        <div className="hidden md:flex shrink-0 flex-col items-center justify-center text-slate-600/30 px-1 select-none">
+                          <span className="text-[10px] font-mono font-extrabold text-blue-500/25 tracking-widest uppercase mb-1">CONNECTING</span>
+                          <div className="flex items-center">
+                            <div className="w-8 md:w-12 h-[2px] bg-gradient-to-r from-blue-500/20 via-blue-500/40 to-blue-500/20" />
+                            <ArrowRight className="w-5 h-5 text-blue-500/50 animate-pulse" />
+                          </div>
                         </div>
-                      </div>
+
+                        {/* Mobile Connector */}
+                        <div className="flex md:hidden shrink-0 flex-col items-center justify-center text-slate-600/30 py-4 select-none">
+                          <span className="text-[9px] font-mono font-extrabold text-blue-500/25 tracking-widest uppercase mb-1">CONNECTING</span>
+                          <div className="flex flex-col items-center">
+                            <div className="h-6 w-[2px] bg-gradient-to-b from-blue-500/20 via-blue-500/40 to-blue-500/20" />
+                            <ChevronDown className="w-5 h-5 text-blue-500/50 animate-pulse mt-0.5" />
+                          </div>
+                        </div>
+                      </>
                     )}
                   </React.Fragment>
                 );

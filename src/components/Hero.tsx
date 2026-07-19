@@ -201,7 +201,7 @@ export default function Hero({
               isLightTheme ? "text-slate-600 font-medium" : "text-slate-400"
             }`}
           >
-            Ultimate interactive Pokédex and comprehensive Pokémon universe encyclopedia.
+            Dexoria is the ultimate full-stack interactive Pokédex and comprehensive Pokémon universe encyclopedia. Explore detailed stats, regional maps, type counters, and customize dynamic battle teams.
           </motion.p>
 
           {/* Buttons */}
@@ -229,6 +229,62 @@ export default function Hero({
               <BookOpen className="w-4 h-4" />
               <span>Pokédex</span>
             </button>
+          </motion.div>
+
+          {/* 3-Column Value Proposition Grid */}
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.45 }}
+            className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-12 text-left max-w-2xl w-full"
+          >
+            <div className={`p-4 rounded-2xl border transition-all hover:scale-[1.02] ${
+              isLightTheme 
+                ? "bg-white/80 border-slate-200/60 text-slate-800 shadow-sm shadow-slate-100" 
+                : "bg-slate-950/40 border-white/5 text-slate-200"
+            }`}>
+              <div className="flex items-center gap-2 mb-2">
+                <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-500">
+                  <Compass className="w-4 h-4" />
+                </div>
+                <h3 className="font-display font-black text-xs uppercase tracking-tight">Interactive Dex</h3>
+              </div>
+              <p className="text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
+                Explore real-time data for over 1,025 Pokémon spanning Generations 1 to 9 with granular type counters.
+              </p>
+            </div>
+
+            <div className={`p-4 rounded-2xl border transition-all hover:scale-[1.02] ${
+              isLightTheme 
+                ? "bg-white/80 border-slate-200/60 text-slate-800 shadow-sm shadow-slate-100" 
+                : "bg-slate-950/40 border-white/5 text-slate-200"
+            }`}>
+              <div className="flex items-center gap-2 mb-2">
+                <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-500">
+                  <Orbit className="w-4 h-4" />
+                </div>
+                <h3 className="font-display font-black text-xs uppercase tracking-tight">Advanced Analytics</h3>
+              </div>
+              <p className="text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
+                Compare base stats side-by-side, map out graphical timelines, and explore interactive matchup multipliers.
+              </p>
+            </div>
+
+            <div className={`p-4 rounded-2xl border transition-all hover:scale-[1.02] ${
+              isLightTheme 
+                ? "bg-white/80 border-slate-200/60 text-slate-800 shadow-sm shadow-slate-100" 
+                : "bg-slate-950/40 border-white/5 text-slate-200"
+            }`}>
+              <div className="flex items-center gap-2 mb-2">
+                <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-500">
+                  <Sparkles className="w-4 h-4" />
+                </div>
+                <h3 className="font-display font-black text-xs uppercase tracking-tight">Battle Builder</h3>
+              </div>
+              <p className="text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
+                Formulate your custom 6-Pokémon battle roster, balance team type defenses, and curate favorites securely.
+              </p>
+            </div>
           </motion.div>
 
           {/* Stats strip */}

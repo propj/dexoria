@@ -1,21 +1,35 @@
 import React, { useState, useEffect, useRef } from "react";
 import Navbar from "./components/Navbar";
 import Hero from "./components/Hero";
-import RegionSection from "./components/RegionSection";
-import PokemonGrid from "./components/PokemonGrid";
-import PokemonModal from "./components/PokemonModal";
-import TypesSection from "./components/TypesSection";
-import CompareSection from "./components/CompareSection";
-import TimelineSection from "./components/TimelineSection";
-import FunSection from "./components/FunSection";
-import FavoritesSection from "./components/FavoritesSection";
-import AboutSection from "./components/AboutSection";
-import TeamBuilderSection from "./components/TeamBuilderSection";
 import Footer from "./components/Footer";
 import { CookieBanner, PrivacyPolicyModal, TermsOfServicesModal } from "./components/LegalModals";
 import { Region } from "./types";
 import { REGIONS_DATA } from "./data/regions";
 import { Sparkles, Heart, ChevronRight, Lock, Package, Wand2, Users, Newspaper, ChevronDown, ChevronUp, Calendar } from "lucide-react";
+
+// Lazy-loaded components to improve initial bundle size & load performance
+const RegionSection = React.lazy(() => import("./components/RegionSection"));
+const PokemonGrid = React.lazy(() => import("./components/PokemonGrid"));
+const PokemonModal = React.lazy(() => import("./components/PokemonModal"));
+const TypesSection = React.lazy(() => import("./components/TypesSection"));
+const CompareSection = React.lazy(() => import("./components/CompareSection"));
+const TimelineSection = React.lazy(() => import("./components/TimelineSection"));
+const FunSection = React.lazy(() => import("./components/FunSection"));
+const FavoritesSection = React.lazy(() => import("./components/FavoritesSection"));
+const AboutSection = React.lazy(() => import("./components/AboutSection"));
+const TeamBuilderSection = React.lazy(() => import("./components/TeamBuilderSection"));
+const PageNotFound = React.lazy(() => import("./components/PageNotFound"));
+
+function ComponentLoader() {
+  return (
+    <div className="flex flex-col items-center justify-center py-24 min-h-[350px] w-full animate-pulse">
+      <div className="w-12 h-12 rounded-full border-4 border-blue-500/20 border-t-blue-500 animate-spin mb-4" />
+      <span className="text-xs font-mono font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+        Decrypting Archive...
+      </span>
+    </div>
+  );
+}
 
 
 export default function App() {
@@ -24,6 +38,7 @@ export default function App() {
   
   // Nested sub-tabs inside Pokédex page
   const [nationalSubTab, setNationalSubTab] = useState<"dex" | "types" | "compare" | "team">("dex");
+  const [showMobileSubTabs, setShowMobileSubTabs] = useState<boolean>(false);
   
   // Favorites State synced to LocalStorage
   const [favorites, setFavorites] = useState<number[]>([]);
@@ -86,7 +101,7 @@ export default function App() {
       const pathSub = parts[1] || "";
 
       const targetPage = pageParam || pathPage;
-      const validPages = ["home", "regions", "national", "characters", "poke-ai", "timeline", "fun", "about", "favorites"];
+      const validPages = ["home", "regions", "national", "characters", "poke-ai", "timeline", "fun", "about", "favorites", "404"];
 
       if (validPages.includes(targetPage)) {
         setActivePage(targetPage);
@@ -97,6 +112,7 @@ export default function App() {
             if (foundRegion) {
               setSelectedRegion(foundRegion);
             } else {
+              setActivePage("404");
               setSelectedRegion(null);
             }
           } else {
@@ -116,7 +132,7 @@ export default function App() {
         }
       } else {
         // Fallback for unrecognized paths
-        setActivePage("home");
+        setActivePage("404");
         setSelectedRegion(null);
       }
     };
@@ -134,7 +150,9 @@ export default function App() {
   // Update URL pathname when activePage, selectedRegion, or nationalSubTab changes
   useEffect(() => {
     let newPath = "/";
-    if (activePage !== "home") {
+    if (activePage === "404") {
+      newPath = window.location.pathname; // Retain original URL so they can see typo
+    } else if (activePage !== "home") {
       newPath = `/${activePage}`;
       if (activePage === "regions" && selectedRegion) {
         newPath += `/${selectedRegion.id.toLowerCase()}`;
@@ -178,15 +196,162 @@ export default function App() {
   // Save theme state updates
   useEffect(() => {
     localStorage.setItem("dexoria_theme", isLightTheme ? "light" : "dark");
-    // Also toggle standard light/dark background styles
+    
+    // Toggle standard light/dark background styles and force precise body/html background
+    const rootEl = document.documentElement;
+    const bodyEl = document.body;
+    const themeColor = isLightTheme ? "#FAF7F0" : "#09090B";
+
     if (isLightTheme) {
-      document.body.classList.add("light");
-      document.body.classList.remove("dark");
+      bodyEl.classList.add("light");
+      bodyEl.classList.remove("dark");
+      rootEl.style.backgroundColor = "#FAF7F0";
+      bodyEl.style.backgroundColor = "#FAF7F0";
     } else {
-      document.body.classList.remove("light");
-      document.body.classList.add("dark");
+      bodyEl.classList.remove("light");
+      bodyEl.classList.add("dark");
+      rootEl.style.backgroundColor = "#09090B";
+      bodyEl.style.backgroundColor = "#09090B";
     }
+
+    // Dynamic browser chrome meta-tag updates
+    let metaTag = document.getElementById("meta-theme-color") as HTMLMetaElement | null;
+    if (!metaTag) {
+      metaTag = document.createElement("meta");
+      metaTag.id = "meta-theme-color";
+      metaTag.name = "theme-color";
+      document.getElementsByTagName("head")[0].appendChild(metaTag);
+    }
+    metaTag.content = themeColor;
   }, [isLightTheme]);
+
+  // Dynamic SEO, Structured Data, Title, and Canonical URL Management
+  useEffect(() => {
+    // 1. Determine Title & Meta Description based on active route
+    let pageTitle = "Dexoria - Ultimate Pokémon Pokédex & Universe Encyclopedia";
+    let metaDesc = "Dexoria is the ultimate interactive Pokédex and comprehensive Pokémon universe encyclopedia. Explore complete stats, regional maps, type matchups, and customize battle teams.";
+
+    if (activePage === "home") {
+      pageTitle = "Dexoria - Ultimate Pokémon Pokédex & Universe Encyclopedia";
+      metaDesc = "Dexoria is the ultimate interactive Pokédex and comprehensive Pokémon universe encyclopedia. Explore complete stats, regional maps, type matchups, and customize battle teams spanning Gen 1 to Paldea.";
+    } else if (activePage === "regions") {
+      if (selectedRegion) {
+        pageTitle = `${selectedRegion.name} Region Guide - Dexoria Pokémon Encyclopedia`;
+        metaDesc = `Explore the ${selectedRegion.name} region in Dexoria. Discover Resident Professor ${selectedRegion.professor || "the region"}, Champion ${selectedRegion.champion || "battle leagues"}, starters, legendary Pokémon, and notable gym leaders.`;
+      } else {
+        pageTitle = "Pokémon Regions Directory - Dexoria Explorer";
+        metaDesc = "Browse and discover all core regions of the Pokémon world, including Kanto, Johto, Hoenn, Sinnoh, Unova, Kalos, Alola, Galar, and Paldea.";
+      }
+    } else if (activePage === "national") {
+      if (nationalSubTab === "dex") {
+        pageTitle = "National Pokédex Database - Dexoria Pokémon Archives";
+        metaDesc = "Explore the full National Pokédex spanning multiple generations. Filter species by types, search instantly by name, and analyze complete stats, abilities, and evolutions.";
+      } else if (nationalSubTab === "types") {
+        pageTitle = "Pokémon Type Matchups & Multipliers Matrix - Dexoria";
+        metaDesc = "Understand strengths and weaknesses with our comprehensive Pokémon Elemental Types chart. Interactive multipliers help you master battles and select counters.";
+      } else if (nationalSubTab === "compare") {
+        pageTitle = "Compare Pokémon Stats & Lore Side-by-Side - Dexoria";
+        metaDesc = "Compare base stats, BST totals, combat metrics, and regional lore systems of any two Pokémon side-by-side in real-time.";
+      } else if (nationalSubTab === "team") {
+        pageTitle = "Advanced Pokémon Battle Team Builder - Dexoria Roster Editor";
+        metaDesc = "Build and evaluate your ultimate Pokémon battle squad. Track team types, balance elemental weaknesses, and perfect your custom line-ups.";
+      }
+    } else if (activePage === "timeline") {
+      pageTitle = "Pokémon Generation Timeline & Release History - Dexoria";
+      metaDesc = "Journey through the evolution of Pokémon games from Gen 1 Red & Blue to the latest Gen 9 Scarlet & Violet. Explore key innovations and dates.";
+    } else if (activePage === "fun") {
+      pageTitle = "Who's That Pokémon? Silhouette Quizzes & Mini-Games - Dexoria";
+      metaDesc = "Test your trainer instincts with Who's That Pokémon interactive visual quizzes, daily spotlight challenges, and curated random party generators.";
+    } else if (activePage === "about") {
+      pageTitle = "About Dexoria Pokédex Project - Our Mission";
+      metaDesc = "Discover the story, design principles, technology stack, and visual engineering goals behind Dexoria, the ultimate fan-built Pokémon encyclopedia.";
+    } else if (activePage === "favorites") {
+      pageTitle = "Your Curated Pokémon Favorites Team - Dexoria";
+      metaDesc = "Examine and manage your custom favorites list. Curate a personal Pokémon dream team and inspect their dynamic stats and types.";
+    } else if (activePage === "poke-ai") {
+      pageTitle = "Poke AI Creative Fan-Fiction & Lore Studio - Dexoria";
+      metaDesc = "Write unique trainer chronicles and co-author customized lore structures for your favorite Pokémon using next-gen generative intelligence.";
+    } else if (activePage === "characters") {
+      pageTitle = "Characters, Trainers & Items Directory - Dexoria";
+      metaDesc = "Coming soon: An extensive trainer profile ledger and comprehensive item search engine compiled across Kanto and other classic regions.";
+    } else if (activePage === "404") {
+      pageTitle = "Page Not Found (404) - Dexoria Pokémon Dex";
+      metaDesc = "The requested page was not found in our database archives. Go back to Home or explore the National Pokédex.";
+    }
+
+    // Update document title
+    document.title = pageTitle;
+
+    // Update Meta Description
+    let metaDescTag = document.querySelector('meta[name="description"]');
+    if (metaDescTag) {
+      metaDescTag.setAttribute("content", metaDesc);
+    } else {
+      metaDescTag = document.createElement("meta");
+      metaDescTag.setAttribute("name", "description");
+      metaDescTag.setAttribute("content", metaDesc);
+      document.head.appendChild(metaDescTag);
+    }
+
+    // Update Open Graph Title & Description
+    const ogTitle = document.querySelector('meta[property="og:title"]');
+    if (ogTitle) ogTitle.setAttribute("content", pageTitle);
+    const ogDesc = document.querySelector('meta[property="og:description"]');
+    if (ogDesc) ogDesc.setAttribute("content", metaDesc);
+
+    // Update Twitter Title & Description
+    const twitterTitle = document.querySelector('meta[property="twitter:title"]');
+    if (twitterTitle) twitterTitle.setAttribute("content", pageTitle);
+    const twitterDesc = document.querySelector('meta[property="twitter:description"]');
+    if (twitterDesc) twitterDesc.setAttribute("content", metaDesc);
+
+    // 2. Manage Canonical URL Link tag
+    const canonicalHref = "https://www.dexoria.space" + window.location.pathname;
+    let canonicalLink = document.querySelector('link[rel="canonical"]');
+    if (canonicalLink) {
+      canonicalLink.setAttribute("href", canonicalHref);
+    } else {
+      canonicalLink = document.createElement("link");
+      canonicalLink.setAttribute("rel", "canonical");
+      canonicalLink.setAttribute("href", canonicalHref);
+      document.head.appendChild(canonicalLink);
+    }
+
+    // 3. Inject Schema.org Structured Data
+    let schemaScript = document.getElementById("dexoria-seo-schema") as HTMLScriptElement;
+    if (!schemaScript) {
+      schemaScript = document.createElement("script");
+      schemaScript.id = "dexoria-seo-schema";
+      schemaScript.type = "application/ld+json";
+      document.head.appendChild(schemaScript);
+    }
+
+    const structuredData = {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Dexoria",
+      "alternateName": "Dexoria Pokédex",
+      "url": canonicalHref,
+      "description": metaDesc,
+      "applicationCategory": "EducationalApplication",
+      "genre": "Gaming / Pokémon Encyclopedia",
+      "browserRequirements": "Requires HTML5, CSS3, ES6 support",
+      "softwareVersion": "1.2.0",
+      "operatingSystem": "All",
+      "offers": {
+        "@type": "Offer",
+        "price": "0.00",
+        "priceCurrency": "USD"
+      },
+      "creator": {
+        "@type": "Organization",
+        "name": "Dexoria Project",
+        "url": "https://www.dexoria.space"
+      }
+    };
+
+    schemaScript.textContent = JSON.stringify(structuredData);
+  }, [activePage, selectedRegion, nationalSubTab]);
 
   // Particle Starfield Background Loop
   useEffect(() => {
@@ -316,7 +481,8 @@ export default function App() {
 
       {/* Main Content Router */}
       <main className="flex-grow relative z-10 pt-4 pb-12">
-        {activePage === "home" && (
+        <React.Suspense fallback={<ComponentLoader />}>
+          {activePage === "home" && (
           <div>
             <Hero
               onExploreRegions={() => setActivePage("regions")}
@@ -569,8 +735,82 @@ export default function App() {
         {activePage === "national" && (
           <div className="py-8 px-6 md:px-12">
             {/* Tactile Sub-navigation tab selector */}
-            <div className="flex justify-center mb-10">
-              <div className={`p-1 rounded-2xl flex gap-1 border ${
+            <div className="flex justify-center mb-10 w-full px-4">
+              {/* Mobile Collapsible Subtabs Panel (sm:hidden) */}
+              <div className="block sm:hidden w-full max-w-[320px]">
+                {/* Active Tab Toggle Button */}
+                <button
+                  type="button"
+                  onClick={() => setShowMobileSubTabs(!showMobileSubTabs)}
+                  className={`w-full px-5 py-3.5 rounded-2xl text-xs font-bold uppercase tracking-wider flex items-center justify-between shadow-md border cursor-pointer transition-all ${
+                    isLightTheme
+                      ? "bg-white text-slate-900 border-slate-300 shadow-slate-100"
+                      : "bg-[#151516] text-white border-white/5"
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+                    {nationalSubTab === "dex" && "Pokédex"}
+                    {nationalSubTab === "types" && "Elemental Types"}
+                    {nationalSubTab === "compare" && "Compare"}
+                    {nationalSubTab === "team" && "Team Builder"}
+                  </span>
+                  {showMobileSubTabs ? (
+                    <ChevronUp className="w-4 h-4 text-slate-400" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 text-slate-400" />
+                  )}
+                </button>
+
+                {/* Collapsible Panel containing the actual tab buttons */}
+                <div
+                  className={`w-full flex flex-col gap-2 mt-2 transition-all duration-300 ease-in-out overflow-hidden ${
+                    showMobileSubTabs
+                      ? "max-h-[300px] opacity-100 py-1"
+                      : "max-h-0 opacity-0 pointer-events-none"
+                  }`}
+                >
+                  {(["dex", "types", "compare", "team"] as const).map((tab) => {
+                    const label =
+                      tab === "dex"
+                        ? "Pokédex"
+                        : tab === "types"
+                        ? "Elemental Types"
+                        : tab === "compare"
+                        ? "Compare"
+                        : "Team Builder";
+                    const isActive = nationalSubTab === tab;
+                    return (
+                      <button
+                        key={tab}
+                        onClick={() => {
+                          setNationalSubTab(tab);
+                          setShowMobileSubTabs(false);
+                        }}
+                        className={`w-full px-5 py-3 rounded-xl text-left text-xs font-bold uppercase tracking-wider cursor-pointer transition-all flex items-center justify-between border ${
+                          isActive
+                            ? isLightTheme
+                              ? "bg-blue-50 border-blue-200 text-blue-700 shadow-sm"
+                              : "bg-[#242426] border-blue-500/30 text-white shadow-sm"
+                            : isLightTheme
+                            ? "bg-white border-slate-200 text-slate-600 hover:text-slate-950 hover:bg-slate-50"
+                            : "bg-[#151516] border-white/5 text-slate-400 hover:text-white hover:bg-white/5"
+                        }`}
+                      >
+                        <span>{label}</span>
+                        {tab === "team" && (
+                          <span className="text-[9px] font-black lowercase text-blue-500 dark:text-blue-400 tracking-normal px-1.5 py-0.5 rounded bg-blue-500/10 border border-blue-500/20">
+                            new!
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Desktop Subtabs Tab Selector (hidden sm:flex) */}
+              <div className={`hidden sm:flex p-1 rounded-2xl gap-1 border ${
                 isLightTheme ? "bg-[#EFEAE2] border-[#E5DDD0]/50" : "bg-[#151516] border-white/5"
               }`}>
                 {(["dex", "types", "compare", "team"] as const).map((tab) => {
@@ -869,6 +1109,18 @@ export default function App() {
             />
           </div>
         )}
+
+        {activePage === "404" && (
+          <PageNotFound
+            isLightTheme={isLightTheme}
+            onRedirectHome={() => setActivePage("home")}
+            onRedirectPokedex={() => {
+              setActivePage("national");
+              setNationalSubTab("dex");
+            }}
+          />
+        )}
+        </React.Suspense>
       </main>
 
       {/* Sticky Bottom Footer */}
@@ -881,14 +1133,16 @@ export default function App() {
 
       {/* Absolute Overlay: Detailed Pokémon Modal */}
       {selectedPokemonId !== null && (
-        <PokemonModal
-          id={selectedPokemonId}
-          onClose={() => setSelectedPokemonId(null)}
-          isLightTheme={isLightTheme}
-          isFav={favorites.includes(selectedPokemonId)}
-          toggleFavorite={toggleFavorite}
-          onSelectPokemonById={handleSelectPokemonById} // Supports nested click evolutions!
-        />
+        <React.Suspense fallback={null}>
+          <PokemonModal
+            id={selectedPokemonId}
+            onClose={() => setSelectedPokemonId(null)}
+            isLightTheme={isLightTheme}
+            isFav={favorites.includes(selectedPokemonId)}
+            toggleFavorite={toggleFavorite}
+            onSelectPokemonById={handleSelectPokemonById} // Supports nested click evolutions!
+          />
+        </React.Suspense>
       )}
 
       {/* Floating Toast Notification Alert */}
