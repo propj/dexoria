@@ -6,6 +6,10 @@
       "destination": "/sitemap.xml"
     },
     {
+      "source": "/sitemap.xsl",
+      "destination": "/sitemap.xsl"
+    },
+    {
       "source": "/sitemap-(.*).xml",
       "destination": "/sitemap-$1.xml"
     },

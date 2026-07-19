@@ -78,6 +78,10 @@ async function startServer() {
     sendStaticOrPublicFile("sitemap.xml", res);
   });
 
+  app.get("/sitemap.xsl", (req, res) => {
+    sendStaticOrPublicFile("sitemap.xsl", res);
+  });
+
   app.get("/sitemap-:section.xml", (req, res) => {
     sendStaticOrPublicFile(`sitemap-${req.params.section}.xml`, res);
   });
