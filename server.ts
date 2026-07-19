@@ -2,7 +2,6 @@ import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
 import compression from "compression";
-import sitemap from "./src/sitemap";
 
 async function startServer() {
   const app = express();
@@ -76,45 +75,11 @@ async function startServer() {
   // Serve sitemaps, robots.txt, and google validation files explicitly at the top level
   // This guarantees they are always served cleanly with 200 OK across both dev and prod
   app.get("/sitemap.xml", (req, res) => {
-    try {
-      const entries = sitemap();
-      const xmlEntries = entries
-        .map((entry) => {
-          const loc = `<loc>${entry.url}</loc>`;
-          const lastMod = entry.lastModified
-            ? `<lastmod>${
-                entry.lastModified instanceof Date
-                  ? entry.lastModified.toISOString().split("T")[0]
-                  : entry.lastModified
-              }</lastmod>`
-            : "";
-          const changeFreq = entry.changeFrequency
-            ? `<changefreq>${entry.changeFrequency}</changefreq>`
-            : "";
-          const priority =
-            entry.priority !== undefined
-              ? `<priority>${entry.priority.toFixed(1)}</priority>`
-              : "";
-          return `  <url>
-    ${loc}
-    ${lastMod}
-    ${changeFreq}
-    ${priority}
-  </url>`;
-        })
-        .join("\n");
+    sendStaticOrPublicFile("sitemap.xml", res);
+  });
 
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${xmlEntries}
-</urlset>`;
-
-      res.header("Content-Type", "application/xml");
-      res.send(xml);
-    } catch (err) {
-      console.error("Error generating sitemap:", err);
-      res.status(500).send("Error generating sitemap");
-    }
+  app.get("/sitemap-:section.xml", (req, res) => {
+    sendStaticOrPublicFile(`sitemap-${req.params.section}.xml`, res);
   });
 
   app.get("/robots.txt", (req, res) => {

@@ -40,11 +40,6 @@ export default function App() {
   // Nested sub-directories for Character / Item Dex page
   const [selectedDexSubSection, setSelectedDexSubSection] = useState<"character" | "item" | null>(null);
 
-  // Password Lock state for Character Dex
-  const [isPassModalOpen, setIsPassModalOpen] = useState<boolean>(false);
-  const [passInput, setPassInput] = useState<string>("");
-  const [passError, setPassError] = useState<string>("");
-
   // Reset nesting state on other page navigation
   useEffect(() => {
     if (activePage !== "characters") {
@@ -75,6 +70,14 @@ export default function App() {
   // Home Page News Section State
   const [isNewsExpanded, setIsNewsExpanded] = useState<boolean>(false);
 
+  // Password Lock state for Character Dex
+  const [isCharacterDexUnlocked, setIsCharacterDexUnlocked] = useState<boolean>(() => {
+    return localStorage.getItem("dexoria_character_unlocked") === "true";
+  });
+  const [showPasswordModal, setShowPasswordModal] = useState<boolean>(false);
+  const [enteredPassword, setEnteredPassword] = useState<string>("");
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   // Load theme state on mount
@@ -85,12 +88,115 @@ export default function App() {
     }
   }, []);
 
-  // Ensure the pathname is clean and always / at the root domain without sub-paths
+  // Restore dynamic URL route matching and sync for SEO/Sitemaps
   useEffect(() => {
-    if (window.location.pathname !== "/") {
-      window.history.replaceState(null, "", "/");
-    }
+    const handleUrlSync = () => {
+      // Convert old hash URLs if any
+      if (window.location.hash) {
+        const rawHash = window.location.hash.substring(1).replace(/^\/|\/$/g, "");
+        if (rawHash) {
+          const parts = rawHash.split("/");
+          const page = parts[0];
+          const sub = parts[1] || "";
+          let cleanPath = `/${page}`;
+          if (sub) {
+            cleanPath += `/${sub}`;
+          }
+          window.history.replaceState(null, "", cleanPath);
+        }
+      }
+
+      let pathname = window.location.pathname.replace(/^\/|\/$/g, "");
+      const params = new URLSearchParams(window.location.search);
+      const pageParam = params.get("page");
+
+      const parts = pathname.split("/");
+      const pathPage = parts[0] || "home";
+      const pathSub = parts[1] || "";
+
+      const targetPage = pageParam || pathPage;
+      const validPages = ["home", "regions", "national", "characters", "poke-ai", "timeline", "fun", "about", "favorites", "404"];
+
+      if (validPages.includes(targetPage)) {
+        setActivePage(targetPage);
+
+        if (targetPage === "regions") {
+          if (pathSub) {
+            const foundRegion = REGIONS_DATA.find(r => r.id.toLowerCase() === pathSub.toLowerCase());
+            if (foundRegion) {
+              setSelectedRegion(foundRegion);
+            } else {
+              setActivePage("404");
+              setSelectedRegion(null);
+            }
+          } else {
+            setSelectedRegion(null);
+          }
+        } else if (targetPage === "national") {
+          if (pathSub && ["dex", "types", "compare", "team"].includes(pathSub)) {
+            setNationalSubTab(pathSub as any);
+          } else {
+            const tabParam = params.get("tab");
+            if (tabParam && ["dex", "types", "compare", "team"].includes(tabParam)) {
+              setNationalSubTab(tabParam as any);
+            } else {
+              setNationalSubTab("dex");
+            }
+          }
+        } else if (targetPage === "characters") {
+          if (pathSub && ["character", "item"].includes(pathSub)) {
+            setSelectedDexSubSection(pathSub as any);
+          } else {
+            setSelectedDexSubSection(null);
+          }
+        }
+      } else {
+        setActivePage("404");
+        setSelectedRegion(null);
+      }
+    };
+
+    handleUrlSync();
+    window.addEventListener("popstate", handleUrlSync);
+    window.addEventListener("hashchange", handleUrlSync);
+    
+    return () => {
+      window.removeEventListener("popstate", handleUrlSync);
+      window.removeEventListener("hashchange", handleUrlSync);
+    };
   }, []);
+
+  // Update URL pathname whenever activePage, selectedRegion, nationalSubTab, or selectedDexSubSection changes
+  useEffect(() => {
+    let newPath = "/";
+    if (activePage === "404") {
+      newPath = window.location.pathname;
+    } else if (activePage !== "home") {
+      newPath = `/${activePage}`;
+      if (activePage === "regions" && selectedRegion) {
+        newPath += `/${selectedRegion.id.toLowerCase()}`;
+      } else if (activePage === "national") {
+        newPath += `/${nationalSubTab}`;
+      } else if (activePage === "characters" && selectedDexSubSection) {
+        newPath += `/${selectedDexSubSection}`;
+      }
+    }
+
+    const currentPath = window.location.pathname;
+    
+    if (currentPath !== newPath && currentPath !== newPath + "/") {
+      const isInitialOrInnerChange = currentPath === "/" || 
+        (currentPath.startsWith("/national") && newPath.startsWith("/national")) ||
+        (currentPath.startsWith("/regions") && newPath.startsWith("/regions")) ||
+        (currentPath.startsWith("/characters") && newPath.startsWith("/characters"));
+      
+      if (isInitialOrInnerChange) {
+        window.history.replaceState(null, "", newPath);
+      } else {
+        window.history.pushState(null, "", newPath);
+      }
+    }
+  }, [activePage, selectedRegion, nationalSubTab, selectedDexSubSection]);
 
   // Synchronize favorites on mount
   useEffect(() => {
@@ -916,35 +1022,59 @@ export default function App() {
 
                 {/* Two Column Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-16">
-                  {/* Character Dex Section (Encrypted/Locked) */}
+                  {/* Character Dex Section */}
                   <div
-                    onClick={() => setIsPassModalOpen(true)}
-                    className={`group p-8 md:p-10 rounded-3xl border transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl cursor-pointer relative ${
+                    onClick={() => {
+                      if (isCharacterDexUnlocked) {
+                        setSelectedDexSubSection("character");
+                      } else {
+                        setShowPasswordModal(true);
+                      }
+                    }}
+                    className={`group p-8 md:p-10 rounded-3xl border transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl cursor-pointer ${
                       isLightTheme
-                        ? "bg-white/80 border-slate-300/40 text-slate-900 shadow-xl hover:border-amber-400"
-                        : "bg-slate-950/40 border-white/5 text-slate-100 shadow-2xl hover:border-amber-500/30"
+                        ? "bg-white/80 border-slate-300/40 text-slate-900 shadow-xl hover:border-blue-400"
+                        : "bg-slate-950/40 border-white/5 text-slate-100 shadow-2xl hover:border-blue-500/30"
                     }`}
                   >
                     <div className="flex justify-center mb-6 relative">
-                      <div className="absolute w-24 h-24 rounded-full bg-amber-500/10 blur-xl group-hover:bg-amber-500/20 transition-all" />
+                      <div className={`absolute w-24 h-24 rounded-full blur-xl group-hover:bg-blue-500/20 transition-all ${
+                        isCharacterDexUnlocked ? "bg-blue-500/10" : "bg-amber-500/10 animate-pulse"
+                      }`} />
                       <div className={`w-16 h-16 rounded-2xl flex items-center justify-center border relative z-10 transition-transform duration-300 group-hover:scale-105 ${
-                        isLightTheme 
-                          ? "bg-amber-50 border-amber-200 text-amber-600" 
-                          : "bg-amber-500/10 border-amber-500/20 text-amber-400"
+                        isCharacterDexUnlocked
+                          ? isLightTheme 
+                            ? "bg-blue-50 border-blue-200 text-blue-600" 
+                            : "bg-blue-500/10 border-blue-500/20 text-blue-400"
+                          : isLightTheme
+                            ? "bg-amber-50 border-amber-200 text-amber-600"
+                            : "bg-amber-500/10 border-amber-500/20 text-amber-400"
                       }`}>
                         <Users className="w-8 h-8" />
                       </div>
-                      <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-[#FAF7F0] dark:bg-[#080809] border border-slate-500/10 flex items-center justify-center cursor-pointer hover:scale-110 transition-transform">
-                        <Lock className="w-3.5 h-3.5 text-amber-500" />
+                      <div className={`absolute -top-1 -right-1 w-6 h-6 rounded-full border flex items-center justify-center ${
+                        isCharacterDexUnlocked
+                          ? "bg-emerald-500 text-white border-white/10"
+                          : "bg-amber-500 text-white border-white/10"
+                      }`}>
+                        {isCharacterDexUnlocked ? (
+                          <Sparkles className="w-3.5 h-3.5" />
+                        ) : (
+                          <Lock className="w-3 h-3 text-white" />
+                        )}
                       </div>
                     </div>
 
                     <div className="text-center">
-                      <span className="px-3 py-1 text-[10px] font-extrabold rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-500 border border-amber-500/20 uppercase tracking-widest inline-block mb-4 animate-pulse">
-                        Coming Soon
+                      <span className={`px-3 py-1 text-[10px] font-extrabold rounded-full border uppercase tracking-widest inline-block mb-4 ${
+                        isCharacterDexUnlocked
+                          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+                          : "bg-amber-500/10 text-amber-600 dark:text-amber-500 border-amber-500/20 animate-pulse"
+                      }`}>
+                        {isCharacterDexUnlocked ? "Database Online" : "Coming Soon"}
                       </span>
 
-                      <h3 className="font-display font-black text-2xl tracking-tight mb-3 group-hover:text-amber-500 transition-colors">
+                      <h3 className="font-display font-black text-2xl tracking-tight mb-3 group-hover:text-blue-500 transition-colors">
                         Character Dex
                       </h3>
 
@@ -952,8 +1082,8 @@ export default function App() {
                         Detailed profile indexes for Gym Leaders, Elite Four, Champions, Rivals, and legendary trainers across Kanto and beyond. Compiles their battle teams, strategies, sprites, and background lore.
                       </p>
 
-                      <div className="inline-flex items-center gap-2 text-xs font-black text-amber-500 group-hover:translate-x-1 transition-transform">
-                        <Lock className="w-3.5 h-3.5" /> Unlock Directory <ChevronRight className="w-4 h-4" />
+                      <div className="inline-flex items-center gap-2 text-xs font-black text-blue-500 group-hover:translate-x-1 transition-transform">
+                        {isCharacterDexUnlocked ? "Explore Trainers" : "Unlock Directory"} <ChevronRight className="w-4 h-4" />
                       </div>
                     </div>
                   </div>
@@ -1136,56 +1266,75 @@ export default function App() {
         isLightTheme={isLightTheme} 
       />
 
-      {/* Decryption Passcode Modal for Character Dex */}
-      {isPassModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
-          <div className={`w-full max-w-md p-8 rounded-3xl border shadow-2xl transition-all ${
+      {/* Password Validation Modal for Character Dex */}
+      {showPasswordModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+          <div className={`w-full max-w-md rounded-3xl border p-6 md:p-8 shadow-2xl relative transition-all animate-fade-in ${
             isLightTheme 
               ? "bg-white border-slate-200 text-slate-900" 
-              : "bg-slate-900 border-white/5 text-white"
+              : "bg-slate-900 border-white/5 text-slate-100"
           }`}>
+            <button 
+              onClick={() => {
+                setShowPasswordModal(false);
+                setEnteredPassword("");
+                setPasswordError(null);
+              }}
+              className="absolute top-4 right-4 p-2 rounded-lg hover:bg-slate-500/10 text-slate-400 cursor-pointer text-xl font-bold"
+            >
+              &times;
+            </button>
+
             <div className="text-center mb-6">
-              <div className="mx-auto w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-4 text-amber-500">
-                <Lock className="w-7 h-7" />
+              <div className="w-12 h-12 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center mx-auto mb-4 border border-amber-500/20">
+                <Lock className="w-6 h-6" />
               </div>
-              <h3 className="font-display font-black text-2xl tracking-tight mb-2">
-                Decryption Key Required
+              <h3 className="font-display font-black text-xl md:text-2xl tracking-tight mb-2">
+                Enter Access Key
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                The Character Dex is locked under security protocols. Please enter the master access password.
+              <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400">
+                The Character Dex is currently locked under encryption. Enter the security password to decrypt and explore the trainer archives.
               </p>
             </div>
 
             <form onSubmit={(e) => {
               e.preventDefault();
-              if (passInput === "dexoria123@lock") {
+              if (enteredPassword === "dexoria123@lock") {
+                setIsCharacterDexUnlocked(true);
+                localStorage.setItem("dexoria_character_unlocked", "true");
+                setShowPasswordModal(false);
+                setEnteredPassword("");
+                setPasswordError(null);
                 setSelectedDexSubSection("character");
-                setIsPassModalOpen(false);
-                setPassInput("");
-                setPassError("");
+                
+                // Show nice success toast
+                setToastMessage("Character Dex Unlocked Successfully!");
+                setTimeout(() => setToastMessage(null), 3000);
               } else {
-                setPassError("Invalid passcode. Access denied.");
+                setPasswordError("Incorrect security code. Please try again.");
               }
             }}>
               <div className="mb-4">
                 <input
                   type="password"
-                  placeholder="Enter passcode..."
-                  value={passInput}
+                  placeholder="Enter Password"
+                  value={enteredPassword}
                   onChange={(e) => {
-                    setPassInput(e.target.value);
-                    if (passError) setPassError("");
+                    setEnteredPassword(e.target.value);
+                    if (passwordError) setPasswordError(null);
                   }}
-                  className={`w-full px-4 py-3 rounded-xl border text-sm font-mono tracking-widest focus:outline-none focus:ring-2 transition-all text-center ${
-                    isLightTheme
-                      ? "bg-slate-50 border-slate-200 focus:ring-blue-500/20 focus:border-blue-500 text-slate-900 placeholder-slate-400"
-                      : "bg-slate-950 border-white/5 focus:ring-blue-500/20 focus:border-blue-500 text-white placeholder-slate-600"
+                  className={`w-full px-4 py-3 rounded-xl border font-mono text-sm focus:outline-none transition-all ${
+                    passwordError 
+                      ? "border-red-500 bg-red-500/5 focus:border-red-500 text-red-500" 
+                      : isLightTheme
+                        ? "border-slate-200 focus:border-blue-500 bg-slate-50/50"
+                        : "border-white/5 focus:border-blue-500 bg-slate-950/50 text-slate-100"
                   }`}
                   autoFocus
                 />
-                {passError && (
-                  <p className="text-xs text-rose-500 mt-2 font-mono flex items-center justify-center gap-1.5 animate-pulse">
-                    ⚠️ {passError}
+                {passwordError && (
+                  <p className="text-red-500 text-[11px] font-semibold mt-1.5 flex items-center gap-1">
+                    <span>⚠</span> {passwordError}
                   </p>
                 )}
               </div>
@@ -1194,23 +1343,19 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => {
-                    setIsPassModalOpen(false);
-                    setPassInput("");
-                    setPassError("");
+                    setShowPasswordModal(false);
+                    setEnteredPassword("");
+                    setPasswordError(null);
                   }}
-                  className={`flex-1 py-3 rounded-xl text-xs font-bold transition-all border ${
-                    isLightTheme
-                      ? "border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600"
-                      : "border-white/5 bg-slate-800 hover:bg-slate-700 text-slate-300"
-                  }`}
+                  className="flex-1 py-3 px-4 rounded-xl text-xs font-bold transition-all border border-slate-200/50 dark:border-white/5 bg-slate-500/5 hover:bg-slate-500/10 text-slate-600 dark:text-slate-300 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-blue-500/10 hover:shadow-blue-500/20"
+                  className="flex-1 py-3 px-4 rounded-xl text-xs font-bold transition-all bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/25 cursor-pointer"
                 >
-                  Authorize
+                  Unlock Access
                 </button>
               </div>
             </form>

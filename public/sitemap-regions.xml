@@ -2,68 +2,38 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://www.dexoria.space/regions</loc>
-    <lastmod>2026-07-15</lastmod>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://www.dexoria.space/regions/kanto</loc>
-    <lastmod>2026-07-15</lastmod>
-    <changefreq>monthly</changefreq>
+    <lastmod>2026-07-19</lastmod>
+    <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.dexoria.space/regions/johto</loc>
-    <lastmod>2026-07-15</lastmod>
-    <changefreq>monthly</changefreq>
+    <lastmod>2026-07-19</lastmod>
+    <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.dexoria.space/regions/hoenn</loc>
-    <lastmod>2026-07-15</lastmod>
-    <changefreq>monthly</changefreq>
+    <lastmod>2026-07-19</lastmod>
+    <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.dexoria.space/regions/sinnoh</loc>
-    <lastmod>2026-07-15</lastmod>
-    <changefreq>monthly</changefreq>
+    <lastmod>2026-07-19</lastmod>
+    <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.dexoria.space/regions/unova</loc>
-    <lastmod>2026-07-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://www.dexoria.space/regions/kalos</loc>
-    <lastmod>2026-07-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://www.dexoria.space/regions/alola</loc>
-    <lastmod>2026-07-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://www.dexoria.space/regions/galar</loc>
-    <lastmod>2026-07-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://www.dexoria.space/regions/hisui</loc>
-    <lastmod>2026-07-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://www.dexoria.space/regions/paldea</loc>
-    <lastmod>2026-07-15</lastmod>
-    <changefreq>monthly</changefreq>
+    <lastmod>2026-07-19</lastmod>
+    <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
 </urlset>
