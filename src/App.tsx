@@ -5,7 +5,7 @@ import Footer from "./components/Footer";
 import { CookieBanner, PrivacyPolicyModal, TermsOfServicesModal } from "./components/LegalModals";
 import { Region } from "./types";
 import { REGIONS_DATA } from "./data/regions";
-import { Sparkles, Heart, ChevronRight, Lock, Package, Wand2, Users, Newspaper, ChevronDown, ChevronUp, Calendar } from "lucide-react";
+import { Sparkles, Heart, ChevronRight, Lock, Package, Wand2, Users, Newspaper, ChevronDown, ChevronUp, Calendar, ArrowLeft } from "lucide-react";
 
 // Lazy-loaded components to improve initial bundle size & load performance
 const RegionSection = React.lazy(() => import("./components/RegionSection"));
@@ -19,6 +19,7 @@ const FavoritesSection = React.lazy(() => import("./components/FavoritesSection"
 const AboutSection = React.lazy(() => import("./components/AboutSection"));
 const TeamBuilderSection = React.lazy(() => import("./components/TeamBuilderSection"));
 const PageNotFound = React.lazy(() => import("./components/PageNotFound"));
+const CharacterDex = React.lazy(() => import("./components/CharacterDex"));
 
 function ComponentLoader() {
   return (
@@ -35,6 +36,21 @@ function ComponentLoader() {
 export default function App() {
   const [activePage, setActivePage] = useState<string>("home");
   const [isLightTheme, setIsLightTheme] = useState<boolean>(false);
+  
+  // Nested sub-directories for Character / Item Dex page
+  const [selectedDexSubSection, setSelectedDexSubSection] = useState<"character" | "item" | null>(null);
+
+  // Password Lock state for Character Dex
+  const [isPassModalOpen, setIsPassModalOpen] = useState<boolean>(false);
+  const [passInput, setPassInput] = useState<string>("");
+  const [passError, setPassError] = useState<string>("");
+
+  // Reset nesting state on other page navigation
+  useEffect(() => {
+    if (activePage !== "characters") {
+      setSelectedDexSubSection(null);
+    }
+  }, [activePage]);
   
   // Nested sub-tabs inside Pokédex page
   const [nationalSubTab, setNationalSubTab] = useState<"dex" | "types" | "compare" | "team">("dex");
@@ -69,112 +85,12 @@ export default function App() {
     }
   }, []);
 
-  // Load page state from URL on mount and handle state pop/change events
+  // Ensure the pathname is clean and always / at the root domain without sub-paths
   useEffect(() => {
-    const handleUrlSync = () => {
-      // First, check if there's an old-style hash URL and convert it to clean URL if needed
-      if (window.location.hash) {
-        const rawHash = window.location.hash.substring(1).replace(/^\/|\/$/g, "");
-        if (rawHash) {
-          const parts = rawHash.split("/");
-          const page = parts[0];
-          const sub = parts[1] || "";
-          
-          let cleanPath = `/${page}`;
-          if (sub) {
-            cleanPath += `/${sub}`;
-          }
-          
-          // Replace hash URL with clean pathname URL
-          window.history.replaceState(null, "", cleanPath);
-        }
-      }
-
-      // Read from clean pathname
-      let pathname = window.location.pathname.replace(/^\/|\/$/g, "");
-      const params = new URLSearchParams(window.location.search);
-      const pageParam = params.get("page");
-
-      // e.g., "/regions/kanto" -> parts = ["regions", "kanto"]
-      const parts = pathname.split("/");
-      const pathPage = parts[0] || "home";
-      const pathSub = parts[1] || "";
-
-      const targetPage = pageParam || pathPage;
-      const validPages = ["home", "regions", "national", "characters", "poke-ai", "timeline", "fun", "about", "favorites", "404"];
-
-      if (validPages.includes(targetPage)) {
-        setActivePage(targetPage);
-
-        if (targetPage === "regions") {
-          if (pathSub) {
-            const foundRegion = REGIONS_DATA.find(r => r.id.toLowerCase() === pathSub.toLowerCase());
-            if (foundRegion) {
-              setSelectedRegion(foundRegion);
-            } else {
-              setActivePage("404");
-              setSelectedRegion(null);
-            }
-          } else {
-            setSelectedRegion(null);
-          }
-        } else if (targetPage === "national") {
-          if (pathSub && ["dex", "types", "compare", "team"].includes(pathSub)) {
-            setNationalSubTab(pathSub as any);
-          } else {
-            const tabParam = params.get("tab");
-            if (tabParam && ["dex", "types", "compare", "team"].includes(tabParam)) {
-              setNationalSubTab(tabParam as any);
-            } else {
-              setNationalSubTab("dex");
-            }
-          }
-        }
-      } else {
-        // Fallback for unrecognized paths
-        setActivePage("404");
-        setSelectedRegion(null);
-      }
-    };
-
-    handleUrlSync();
-    window.addEventListener("popstate", handleUrlSync);
-    window.addEventListener("hashchange", handleUrlSync);
-    
-    return () => {
-      window.removeEventListener("popstate", handleUrlSync);
-      window.removeEventListener("hashchange", handleUrlSync);
-    };
+    if (window.location.pathname !== "/") {
+      window.history.replaceState(null, "", "/");
+    }
   }, []);
-
-  // Update URL pathname when activePage, selectedRegion, or nationalSubTab changes
-  useEffect(() => {
-    let newPath = "/";
-    if (activePage === "404") {
-      newPath = window.location.pathname; // Retain original URL so they can see typo
-    } else if (activePage !== "home") {
-      newPath = `/${activePage}`;
-      if (activePage === "regions" && selectedRegion) {
-        newPath += `/${selectedRegion.id.toLowerCase()}`;
-      } else if (activePage === "national") {
-        newPath += `/${nationalSubTab}`;
-      }
-    }
-
-    const currentPath = window.location.pathname;
-    
-    if (currentPath !== newPath && currentPath !== newPath + "/") {
-      // Use pushState to allow back-button navigation if user clicks navbar links
-      // But if they are just on the same page and changing national subtabs, or initial load, replaceState is cleaner
-      const isInitialOrInnerChange = currentPath === "/" || (currentPath.startsWith("/national") && newPath.startsWith("/national"));
-      
-      if (isInitialOrInnerChange) {
-        window.history.replaceState(null, "", newPath);
-      } else {
-        window.history.pushState(null, "", newPath);
-      }
-    }
-  }, [activePage, selectedRegion, nationalSubTab]);
 
   // Synchronize favorites on mount
   useEffect(() => {
@@ -950,89 +866,135 @@ export default function App() {
 
         {activePage === "characters" && (
           <div className="py-12 max-w-5xl mx-auto px-6">
-            <div className="text-center mb-12 animate-fade-in">
-              <span className="px-3 py-1 text-xs font-bold rounded-full bg-blue-500/10 text-blue-500 border border-blue-500/20 uppercase tracking-widest inline-block mb-4">
-                Ultimate Database Expansion
-              </span>
-              <h1 className="font-display font-black text-3xl md:text-5xl tracking-tight mb-4">
-                Char/Item Dex
-              </h1>
-              <p className="text-sm md:text-base text-slate-500 dark:text-slate-400 max-w-lg mx-auto leading-relaxed">
-                We're currently compiling extensive data tables and visual archives for trainer characters, items, and accessories.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Character Dex Section */}
-              <div className={`p-8 md:p-10 rounded-3xl border transition-all ${
-                isLightTheme
-                  ? "bg-white/80 border-slate-300/40 text-slate-900 shadow-xl"
-                  : "bg-slate-950/40 border-white/5 text-slate-100 shadow-2xl"
-              }`}>
-                <div className="flex justify-center mb-6 relative">
-                  <div className="absolute w-24 h-24 rounded-full bg-blue-500/10 blur-xl animate-pulse" />
-                  <div className={`w-16 h-16 rounded-2xl flex items-center justify-center border relative z-10 ${
-                    isLightTheme 
-                      ? "bg-blue-50 border-blue-200 text-blue-600" 
-                      : "bg-blue-500/10 border-blue-500/20 text-blue-400"
-                  }`}>
-                    <Users className="w-8 h-8" />
-                  </div>
-                  <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-[#FAF7F0] dark:bg-[#080809] border border-slate-500/10 flex items-center justify-center">
-                    <Lock className="w-3.5 h-3.5 text-amber-500" />
-                  </div>
+            {selectedDexSubSection === "character" ? (
+              <div className="animate-fade-in">
+                {/* Back button */}
+                <div className="mb-8 flex justify-start">
+                  <button
+                    onClick={() => setSelectedDexSubSection(null)}
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all border border-slate-200/50 dark:border-white/5 bg-slate-500/5 hover:bg-slate-500/10 text-slate-600 dark:text-slate-300 cursor-pointer"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    Back to Directories
+                  </button>
                 </div>
 
-                <div className="text-center">
-                  <span className="px-3 py-1 text-[10px] font-extrabold rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-500 border border-amber-500/20 uppercase tracking-widest inline-block mb-4 animate-pulse">
-                    Coming Soon
+                {/* Sub-Header */}
+                <div className="text-center mb-12">
+                  <span className="px-3 py-1 text-xs font-bold rounded-full bg-blue-500/10 text-blue-500 border border-blue-500/20 uppercase tracking-widest inline-block mb-4">
+                    Database Expansion
                   </span>
-
-                  <h3 className="font-display font-black text-2xl tracking-tight mb-3">
-                    Character Dex
-                  </h3>
-
-                  <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400 leading-relaxed mb-6">
-                    Detailed profile indexes for Gym Leaders, Elite Four, Champions, Rivals, and legendary trainers across Kanto and beyond. Compiles their battle teams, strategies, sprites, and background lore.
+                  <h1 className="font-display font-black text-3xl md:text-5xl tracking-tight mb-4">
+                    Trainer & Character Directory
+                  </h1>
+                  <p className="text-sm md:text-base text-slate-500 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed">
+                    Explore comprehensive profiles, combat stats, canonical timelines, and partner line-ups for legendary trainers across the Pokémon universe.
                   </p>
                 </div>
-              </div>
 
-              {/* Item Dex Section */}
-              <div className={`p-8 md:p-10 rounded-3xl border transition-all ${
-                isLightTheme
-                  ? "bg-white/80 border-slate-300/40 text-slate-900 shadow-xl"
-                  : "bg-slate-950/40 border-white/5 text-slate-100 shadow-2xl"
-              }`}>
-                <div className="flex justify-center mb-6 relative">
-                  <div className="absolute w-24 h-24 rounded-full bg-emerald-500/10 blur-xl animate-pulse" />
-                  <div className={`w-16 h-16 rounded-2xl flex items-center justify-center border relative z-10 ${
-                    isLightTheme 
-                      ? "bg-emerald-50 border-emerald-200 text-emerald-600" 
-                      : "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
-                  }`}>
-                    <Package className="w-8 h-8" />
-                  </div>
-                  <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-[#FAF7F0] dark:bg-[#080809] border border-slate-500/10 flex items-center justify-center">
-                    <Lock className="w-3.5 h-3.5 text-amber-500" />
-                  </div>
+                {/* Character Dex Component */}
+                <div className="mb-16">
+                  <React.Suspense fallback={<ComponentLoader />}>
+                    <CharacterDex isLightTheme={isLightTheme} />
+                  </React.Suspense>
                 </div>
-
-                <div className="text-center">
-                  <span className="px-3 py-1 text-[10px] font-extrabold rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-500 border border-amber-500/20 uppercase tracking-widest inline-block mb-4 animate-pulse">
-                    Coming Soon
+              </div>
+            ) : (
+              <div className="animate-fade-in">
+                {/* Main Directory Header */}
+                <div className="text-center mb-12">
+                  <span className="px-3 py-1 text-xs font-bold rounded-full bg-blue-500/10 text-blue-500 border border-blue-500/20 uppercase tracking-widest inline-block mb-4">
+                    Ultimate Database Expansion
                   </span>
-
-                  <h3 className="font-display font-black text-2xl tracking-tight mb-3">
-                    Item Dex
-                  </h3>
-
-                  <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400 leading-relaxed mb-6">
-                    A comprehensive directory of Poké Balls, battle items, berries, key story artifacts, and held items. Explore dynamic location maps, purchase values, and detailed passive effects.
+                  <h1 className="font-display font-black text-3xl md:text-5xl tracking-tight mb-4">
+                    Char/Item Dex
+                  </h1>
+                  <p className="text-sm md:text-base text-slate-500 dark:text-slate-400 max-w-lg mx-auto leading-relaxed">
+                    We're currently compiling extensive data tables and visual archives for trainer characters, items, and accessories.
                   </p>
                 </div>
+
+                {/* Two Column Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-16">
+                  {/* Character Dex Section (Encrypted/Locked) */}
+                  <div
+                    onClick={() => setIsPassModalOpen(true)}
+                    className={`group p-8 md:p-10 rounded-3xl border transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl cursor-pointer relative ${
+                      isLightTheme
+                        ? "bg-white/80 border-slate-300/40 text-slate-900 shadow-xl hover:border-amber-400"
+                        : "bg-slate-950/40 border-white/5 text-slate-100 shadow-2xl hover:border-amber-500/30"
+                    }`}
+                  >
+                    <div className="flex justify-center mb-6 relative">
+                      <div className="absolute w-24 h-24 rounded-full bg-amber-500/10 blur-xl group-hover:bg-amber-500/20 transition-all" />
+                      <div className={`w-16 h-16 rounded-2xl flex items-center justify-center border relative z-10 transition-transform duration-300 group-hover:scale-105 ${
+                        isLightTheme 
+                          ? "bg-amber-50 border-amber-200 text-amber-600" 
+                          : "bg-amber-500/10 border-amber-500/20 text-amber-400"
+                      }`}>
+                        <Users className="w-8 h-8" />
+                      </div>
+                      <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-[#FAF7F0] dark:bg-[#080809] border border-slate-500/10 flex items-center justify-center cursor-pointer hover:scale-110 transition-transform">
+                        <Lock className="w-3.5 h-3.5 text-amber-500" />
+                      </div>
+                    </div>
+
+                    <div className="text-center">
+                      <span className="px-3 py-1 text-[10px] font-extrabold rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-500 border border-amber-500/20 uppercase tracking-widest inline-block mb-4 animate-pulse">
+                        Coming Soon
+                      </span>
+
+                      <h3 className="font-display font-black text-2xl tracking-tight mb-3 group-hover:text-amber-500 transition-colors">
+                        Character Dex
+                      </h3>
+
+                      <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400 leading-relaxed mb-6">
+                        Detailed profile indexes for Gym Leaders, Elite Four, Champions, Rivals, and legendary trainers across Kanto and beyond. Compiles their battle teams, strategies, sprites, and background lore.
+                      </p>
+
+                      <div className="inline-flex items-center gap-2 text-xs font-black text-amber-500 group-hover:translate-x-1 transition-transform">
+                        <Lock className="w-3.5 h-3.5" /> Unlock Directory <ChevronRight className="w-4 h-4" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Item Dex Section */}
+                  <div className={`p-8 md:p-10 rounded-3xl border transition-all duration-300 opacity-80 ${
+                    isLightTheme
+                      ? "bg-white/80 border-slate-300/40 text-slate-900 shadow-xl"
+                      : "bg-slate-950/40 border-white/5 text-slate-100 shadow-2xl"
+                  }`}>
+                    <div className="flex justify-center mb-6 relative">
+                      <div className="absolute w-24 h-24 rounded-full bg-emerald-500/10 blur-xl animate-pulse" />
+                      <div className={`w-16 h-16 rounded-2xl flex items-center justify-center border relative z-10 ${
+                        isLightTheme 
+                          ? "bg-emerald-50 border-emerald-200 text-emerald-600" 
+                          : "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+                      }`}>
+                        <Package className="w-8 h-8" />
+                      </div>
+                      <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-[#FAF7F0] dark:bg-[#080809] border border-slate-500/10 flex items-center justify-center">
+                        <Lock className="w-3.5 h-3.5 text-amber-500" />
+                      </div>
+                    </div>
+
+                    <div className="text-center">
+                      <span className="px-3 py-1 text-[10px] font-extrabold rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-500 border border-amber-500/20 uppercase tracking-widest inline-block mb-4 animate-pulse">
+                        Coming Soon
+                      </span>
+
+                      <h3 className="font-display font-black text-2xl tracking-tight mb-3">
+                        Item Dex Directory
+                      </h3>
+
+                      <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400 leading-relaxed mb-6">
+                        A comprehensive directory of Poké Balls, battle items, berries, key story artifacts, and held items. Explore dynamic location maps, purchase values, and detailed passive effects.
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="text-center mt-12">
               <button
@@ -1173,6 +1135,88 @@ export default function App() {
         onClose={() => setIsTermsOpen(false)} 
         isLightTheme={isLightTheme} 
       />
+
+      {/* Decryption Passcode Modal for Character Dex */}
+      {isPassModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
+          <div className={`w-full max-w-md p-8 rounded-3xl border shadow-2xl transition-all ${
+            isLightTheme 
+              ? "bg-white border-slate-200 text-slate-900" 
+              : "bg-slate-900 border-white/5 text-white"
+          }`}>
+            <div className="text-center mb-6">
+              <div className="mx-auto w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-4 text-amber-500">
+                <Lock className="w-7 h-7" />
+              </div>
+              <h3 className="font-display font-black text-2xl tracking-tight mb-2">
+                Decryption Key Required
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                The Character Dex is locked under security protocols. Please enter the master access password.
+              </p>
+            </div>
+
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              if (passInput === "dexoria123@lock") {
+                setSelectedDexSubSection("character");
+                setIsPassModalOpen(false);
+                setPassInput("");
+                setPassError("");
+              } else {
+                setPassError("Invalid passcode. Access denied.");
+              }
+            }}>
+              <div className="mb-4">
+                <input
+                  type="password"
+                  placeholder="Enter passcode..."
+                  value={passInput}
+                  onChange={(e) => {
+                    setPassInput(e.target.value);
+                    if (passError) setPassError("");
+                  }}
+                  className={`w-full px-4 py-3 rounded-xl border text-sm font-mono tracking-widest focus:outline-none focus:ring-2 transition-all text-center ${
+                    isLightTheme
+                      ? "bg-slate-50 border-slate-200 focus:ring-blue-500/20 focus:border-blue-500 text-slate-900 placeholder-slate-400"
+                      : "bg-slate-950 border-white/5 focus:ring-blue-500/20 focus:border-blue-500 text-white placeholder-slate-600"
+                  }`}
+                  autoFocus
+                />
+                {passError && (
+                  <p className="text-xs text-rose-500 mt-2 font-mono flex items-center justify-center gap-1.5 animate-pulse">
+                    ⚠️ {passError}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsPassModalOpen(false);
+                    setPassInput("");
+                    setPassError("");
+                  }}
+                  className={`flex-1 py-3 rounded-xl text-xs font-bold transition-all border ${
+                    isLightTheme
+                      ? "border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600"
+                      : "border-white/5 bg-slate-800 hover:bg-slate-700 text-slate-300"
+                  }`}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-blue-500/10 hover:shadow-blue-500/20"
+                >
+                  Authorize
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
