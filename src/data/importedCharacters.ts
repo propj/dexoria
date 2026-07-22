@@ -1,3 +1,5 @@
+import { JOHTO_CHARACTERS } from "./johtoCharacters";
+
 export interface ImportedCharacterStats {
   strength: number;
   intelligence: number;
@@ -3252,5 +3254,6 @@ export const IMPORTED_CHARACTERS: ImportedCharacter[] = [
     "badges": [],
     "achievements": [],
     "status": "Active"
-  }
+  },
+  ...JOHTO_CHARACTERS
 ];

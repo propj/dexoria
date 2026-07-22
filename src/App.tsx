@@ -20,6 +20,7 @@ const AboutSection = React.lazy(() => import("./components/AboutSection"));
 const TeamBuilderSection = React.lazy(() => import("./components/TeamBuilderSection"));
 const PageNotFound = React.lazy(() => import("./components/PageNotFound"));
 const CharacterDex = React.lazy(() => import("./components/CharacterDex"));
+const CommunitySection = React.lazy(() => import("./components/CommunitySection"));
 
 function ComponentLoader() {
   return (
@@ -115,7 +116,7 @@ export default function App() {
       const pathSub = parts[1] || "";
 
       const targetPage = pageParam || pathPage;
-      const validPages = ["home", "regions", "national", "characters", "poke-ai", "timeline", "fun", "about", "favorites", "404"];
+      const validPages = ["home", "regions", "national", "community", "characters", "poke-ai", "timeline", "fun", "about", "favorites", "404"];
 
       if (validPages.includes(targetPage)) {
         setActivePage(targetPage);
@@ -287,6 +288,9 @@ export default function App() {
     } else if (activePage === "about") {
       pageTitle = "About Dexoria Pokédex Project - Our Mission";
       metaDesc = "Discover the story, design principles, technology stack, and visual engineering goals behind Dexoria, the ultimate fan-built Pokémon encyclopedia.";
+    } else if (activePage === "community") {
+      pageTitle = "Pokémon Community Hub & Trainer Social Network - Dexoria";
+      metaDesc = "Coming soon: Join the ultimate Pokémon trainer community hub! Discuss battle strategies, share team builds, post artwork, and connect with fellow trainers.";
     } else if (activePage === "favorites") {
       pageTitle = "Your Curated Pokémon Favorites Team - Dexoria";
       metaDesc = "Examine and manage your custom favorites list. Curate a personal Pokémon dream team and inspect their dynamic stats and types.";
@@ -499,6 +503,8 @@ export default function App() {
         isLightTheme={isLightTheme}
         setIsLightTheme={setIsLightTheme}
         favoritesCount={favorites.length}
+        onSelectPokemonById={handleSelectPokemonById}
+        onSelectRegion={handleSelectRegion}
       />
 
       {/* Main Content Router */}
@@ -970,6 +976,12 @@ export default function App() {
           </div>
         )}
 
+        {activePage === "community" && (
+          <div className="py-4">
+            <CommunitySection isLightTheme={isLightTheme} />
+          </div>
+        )}
+
         {activePage === "characters" && (
           <div className="py-12 max-w-5xl mx-auto px-6">
             {selectedDexSubSection === "character" ? (
@@ -1299,7 +1311,7 @@ export default function App() {
 
             <form onSubmit={(e) => {
               e.preventDefault();
-              if (enteredPassword === "dexoria123@lock") {
+              if (enteredPassword === "jaithra123@" || enteredPassword === "jaitha123@") {
                 setIsCharacterDexUnlocked(true);
                 localStorage.setItem("dexoria_character_unlocked", "true");
                 setShowPasswordModal(false);

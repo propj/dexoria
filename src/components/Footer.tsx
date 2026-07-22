@@ -60,6 +60,13 @@ export default function Footer({
             Pokédex
           </button>
           <button
+            onClick={() => handleNav("community")}
+            className="text-left text-slate-500 hover:text-blue-500 transition-colors cursor-pointer flex items-center justify-between"
+          >
+            <span>Trainer Community</span>
+            <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-500 border border-amber-500/20">Soon</span>
+          </button>
+          <button
             onClick={() => handleNav("types")}
             className="text-left text-slate-500 hover:text-blue-500 transition-colors cursor-pointer"
           >

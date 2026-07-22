@@ -1,13 +1,23 @@
 import React, { useState, useMemo, useRef } from "react";
 import { 
   ChevronRight, Shield, Award, Users, MapPin, Gamepad2, ArrowLeft, 
-  Search, SlidersHorizontal, Info, Swords, Sparkles, Heart 
+  Search, SlidersHorizontal, Info, Swords, Sparkles, Heart, Globe,
+  Compass, Crown, Zap, BookOpen, Layers
 } from "lucide-react";
 import { Region } from "../types";
 import { REGIONS_DATA } from "../data/regions";
 import { getRegionDetail, FeaturedPokemon, Leader } from "../data/regionDetails";
 import { motion, AnimatePresence } from "motion/react";
 import GraphicalRegionMap from "./GraphicalRegionMap";
+import WorldMapRegionsView from "./WorldMapRegionsView";
+
+interface RegionSectionProps {
+  selectedRegion: Region | null;
+  onSelectRegion: (region: Region | null) => void;
+  onSelectPokemonById: (id: number) => void;
+  isLightTheme: boolean;
+  layout?: "grid" | "scroll";
+}
 
 const getRegionSlogan = (id: string) => {
   switch (id) {
@@ -139,7 +149,7 @@ const getRegionCardStyles = (id: string, isLightTheme: boolean) => {
         };
     }
   } else {
-    // Obsidian Dark Mode - with a subtle transparent tint of their original color bleeding from the top-right
+    // Obsidian Dark Mode
     switch (id) {
       case "kanto":
         return {
@@ -207,11 +217,11 @@ const getRegionCardStyles = (id: string, isLightTheme: boolean) => {
         };
       case "hisui":
         return {
-          gradient: "bg-[#09090B] bg-[radial-gradient(ellipse_at_top_right,rgba(120,113,108,0.18),transparent_60%)] border-zinc-500/20 shadow-[0_10px_30px_rgba(120,113,108,0.06)] text-white",
-          badge: "bg-zinc-500/10 text-zinc-300 border-zinc-500/20",
+          gradient: "bg-[#09090B] bg-[radial-gradient(ellipse_at_top_right,rgba(168,162,158,0.18),transparent_60%)] border-stone-500/20 shadow-[0_10px_30px_rgba(168,162,158,0.06)] text-white",
+          badge: "bg-stone-500/10 text-stone-300 border-stone-500/20",
           title: "text-white",
-          slogan: "text-zinc-100/60",
-          arrow: "bg-zinc-500/10 text-zinc-300 border-zinc-500/20 hover:bg-zinc-500/25"
+          slogan: "text-stone-100/60",
+          arrow: "bg-stone-500/10 text-stone-300 border-stone-500/20 hover:bg-stone-500/25"
         };
       case "paldea":
         return {
@@ -223,40 +233,33 @@ const getRegionCardStyles = (id: string, isLightTheme: boolean) => {
         };
       default:
         return {
-          gradient: "bg-[#0A0A0C] border-white/15 shadow-[0_10px_30px_rgba(255,255,255,0.02)] text-white",
-          badge: "bg-white/10 text-slate-200 border-white/5",
+          gradient: "bg-[#09090B] border-white/10 text-white",
+          badge: "bg-white/10 text-slate-300 border-white/10",
           title: "text-white",
           slogan: "text-slate-400",
-          arrow: "bg-white/10 text-white border-white/5 hover:bg-white hover:text-black"
+          arrow: "bg-white/10 text-white hover:bg-white/20"
         };
     }
   }
 };
 
-interface RegionSectionProps {
-  isLightTheme: boolean;
-  onSelectRegion: (region: Region | null) => void;
-  selectedRegion: Region | null;
-  onSelectPokemonById: (id: number) => void;
-  layout: "scroll" | "grid";
-}
-
 export default function RegionSection({
-  isLightTheme,
-  onSelectRegion,
   selectedRegion,
+  onSelectRegion,
   onSelectPokemonById,
-  layout,
+  isLightTheme,
+  layout = "grid"
 }: RegionSectionProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedType, setSelectedType] = useState("all");
+  const [regionTab, setRegionTab] = useState<"overview" | "landmarks" | "roster" | "gyms" | "wild">("overview");
+  const [regionsViewMode, setRegionsViewMode] = useState<"default" | "worldmap">("worldmap");
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const [isHovered, setIsHovered] = useState(false);
 
   const renderJapaneseBackground = (nativeName: string) => {
     const japName = nativeName.split(" ")[0] || nativeName;
-    // Repeat Japanese region name to form a scrolling train
     const trainText = Array(12).fill(japName).join("  •  ");
     return (
       <div className="absolute inset-0 pointer-events-none overflow-hidden flex items-center select-none z-0">
@@ -289,27 +292,21 @@ export default function RegionSection({
     
     let animationFrameId: number;
     let lastTime = performance.now();
-    
-    const scrollContainer = scrollRef.current;
-    if (!scrollContainer) return;
 
     const animateScroll = (time: number) => {
-      // Do not scroll on mobile/tablet viewports (screen width < 768)
-      if (typeof window !== "undefined" && window.innerWidth < 768) {
-        lastTime = time;
+      const scrollContainer = scrollRef.current;
+      if (!scrollContainer) {
         animationFrameId = requestAnimationFrame(animateScroll);
         return;
       }
 
       if (!isHovered) {
-        const delta = (time - lastTime) / 16; // Normalise to 60fps
+        const delta = (time - lastTime) / 16;
         lastTime = time;
         
-        // Gentle train speed
         const speed = 0.55; 
         scrollContainer.scrollLeft += speed * delta;
         
-        // Seamless wrap back to start of the first set
         const halfScrollWidth = scrollContainer.scrollWidth / 2;
         if (scrollContainer.scrollLeft >= halfScrollWidth) {
           scrollContainer.scrollLeft -= halfScrollWidth;
@@ -334,64 +331,6 @@ export default function RegionSection({
     return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
   };
 
-  // List of 4 key representative species for each region in the main grid
-  const regionRepresentatives: Record<string, number[]> = {
-    kanto: [1, 4, 7, 150],
-    johto: [152, 155, 158, 250],
-    hoenn: [252, 255, 258, 384],
-    sinnoh: [387, 390, 393, 487],
-    unova: [495, 498, 501, 644],
-    kalos: [650, 653, 656, 716],
-    alola: [722, 725, 728, 791],
-    galar: [810, 813, 816, 888],
-    hisui: [722, 155, 501, 493],
-    paldea: [906, 909, 912, 1008]
-  };
-
-  // Region specific background gradients
-  const getRegionGradient = (id: string) => {
-    switch (id) {
-      case "kanto":
-        return "from-[#EF4444]/20 to-[#991B1B]/40 border-[#EF4444]/35";
-      case "johto":
-        return "from-[#F59E0B]/20 to-[#92400E]/40 border-[#F59E0B]/35";
-      case "hoenn":
-        return "from-[#10B981]/20 to-[#065F46]/40 border-[#10B981]/35";
-      case "sinnoh":
-        return "from-[#3B82F6]/20 to-[#1E40AF]/40 border-[#3B82F6]/35";
-      case "unova":
-        return "from-[#8B5CF6]/20 to-[#5B21B6]/40 border-[#8B5CF6]/35";
-      case "kalos":
-        return "from-[#EC4899]/20 to-[#9D174D]/40 border-[#EC4899]/35";
-      case "alola":
-        return "from-[#F59E0B]/20 to-[#1E3A8A]/40 border-[#F59E0B]/35";
-      case "galar":
-        return "from-[#06B6D4]/20 to-[#155E75]/40 border-[#06B6D4]/35";
-      case "hisui":
-        return "from-[#4B5563]/20 to-[#1F2937]/40 border-[#4B5563]/35";
-      case "paldea":
-        return "from-[#D946EF]/20 to-[#701A75]/40 border-[#D946EF]/35";
-      default:
-        return "from-[#3B82F6]/10 to-slate-900 border-white/5";
-    }
-  };
-
-  const getRegionGlow = (id: string) => {
-    switch (id) {
-      case "kanto": return "group-hover:shadow-[#EF4444]/25";
-      case "johto": return "group-hover:shadow-[#F59E0B]/25";
-      case "hoenn": return "group-hover:shadow-[#10B981]/25";
-      case "sinnoh": return "group-hover:shadow-[#3B82F6]/25";
-      case "unova": return "group-hover:shadow-[#8B5CF6]/25";
-      case "kalos": return "group-hover:shadow-[#EC4899]/25";
-      case "alola": return "group-hover:shadow-[#F59E0B]/25";
-      case "galar": return "group-hover:shadow-[#06B6D4]/25";
-      case "hisui": return "group-hover:shadow-[#4B5563]/25";
-      case "paldea": return "group-hover:shadow-[#D946EF]/25";
-      default: return "group-hover:shadow-blue-500/10";
-    }
-  };
-
   // ID Ranges for species list
   const regionRanges: Record<string, { start: number; end: number }> = {
     kanto: { start: 1, end: 151 },
@@ -406,29 +345,22 @@ export default function RegionSection({
     paldea: { start: 906, end: 1025 }
   };
 
-  // Generate full local species list based on active region range
   const regionalSpecies = useMemo(() => {
     if (!selectedRegion) return [];
     const range = regionRanges[selectedRegion.id] || { start: 1, end: 151 };
     const list = [];
     
-    // Create a beautiful mock representation of Pokémon species inside this range for visual grid
-    for (let i = range.start; i <= Math.min(range.start + 60, range.end); i++) {
-      // Basic type and name guesser based on IDs for accurate feel
+    for (let i = range.start; i <= Math.min(range.start + 80, range.end); i++) {
       let name = `Species #${i}`;
       let types = ["normal"];
       if (i === 1 || i === 2 || i === 3) { name = "Bulbasaur"; types = ["grass", "poison"]; }
       else if (i === 4 || i === 5 || i === 6) { name = "Charmander"; types = ["fire"]; }
       else if (i === 7 || i === 8 || i === 9) { name = "Squirtle"; types = ["water"]; }
       else if (i === 25) { name = "Pikachu"; types = ["electric"]; }
-      else if (i === 26) { name = "Raichu"; types = ["electric"]; }
-      else if (i === 133) { name = "Eevee"; types = ["normal"]; }
       else if (i === 150) { name = "Mewtwo"; types = ["psychic"]; }
-      else if (i === 151) { name = "Mew"; types = ["psychic"]; }
       else if (i === 152) { name = "Chikorita"; types = ["grass"]; }
       else if (i === 155) { name = "Cyndaquil"; types = ["fire"]; }
       else if (i === 158) { name = "Totodile"; types = ["water"]; }
-      else if (i === 249) { name = "Lugia"; types = ["psychic", "flying"]; }
       else if (i === 250) { name = "Ho-Oh"; types = ["fire", "flying"]; }
       else if (i === 252) { name = "Treecko"; types = ["grass"]; }
       else if (i === 255) { name = "Torchic"; types = ["fire"]; }
@@ -438,468 +370,622 @@ export default function RegionSection({
       else if (i === 390) { name = "Chimchar"; types = ["fire"]; }
       else if (i === 393) { name = "Piplup"; types = ["water"]; }
       else if (i === 487) { name = "Giratina"; types = ["ghost", "dragon"]; }
-      else if (i === 493) { name = "Arceus"; types = ["normal"]; }
       else if (i === 495) { name = "Snivy"; types = ["grass"]; }
       else if (i === 498) { name = "Tepig"; types = ["fire"]; }
       else if (i === 501) { name = "Oshawott"; types = ["water"]; }
-      else if (i === 644) { name = "Zekrom"; types = ["dragon", "electric"]; }
       else if (i === 650) { name = "Chespin"; types = ["grass"]; }
       else if (i === 653) { name = "Fennekin"; types = ["fire"]; }
       else if (i === 656) { name = "Froakie"; types = ["water"]; }
-      else if (i === 716) { name = "Xerneas"; types = ["fairy"]; }
       else if (i === 722) { name = "Rowlet"; types = ["grass", "flying"]; }
       else if (i === 725) { name = "Litten"; types = ["fire"]; }
       else if (i === 728) { name = "Popplio"; types = ["water"]; }
-      else if (i === 791) { name = "Solgaleo"; types = ["psychic", "steel"]; }
       else if (i === 810) { name = "Grookey"; types = ["grass"]; }
       else if (i === 813) { name = "Scorbunny"; types = ["fire"]; }
       else if (i === 816) { name = "Sobble"; types = ["water"]; }
-      else if (i === 888) { name = "Zacian"; types = ["fairy", "steel"]; }
       else if (i === 906) { name = "Sprigatito"; types = ["grass"]; }
       else if (i === 909) { name = "Fuecoco"; types = ["fire"]; }
       else if (i === 912) { name = "Quaxly"; types = ["water"]; }
-      else if (i === 1008) { name = "Miraidon"; types = ["electric", "dragon"]; }
-      else {
-        // generic fill names based on standard pokedex
-        const names = ["Caterpie", "Metapod", "Butterfree", "Weedle", "Kakuna", "Beedrill", "Pidgey", "Pidgeotto", "Pidgeot", "Rattata", "Raticate", "Spearow", "Fearow", "Ekans", "Arbok", "Sandshrew", "Sandslash", "Nidoran♀", "Nidorina", "Nidoqueen", "Nidoran♂", "Nidorino", "Nidoking", "Clefairy", "Clefable", "Vulpix", "Ninetales", "Jigglypuff", "Wigglytuff", "Zubat", "Golbat", "Oddish", "Gloom", "Vileplume", "Paras", "Parasect", "Venonat", "Venomoth", "Diglett", "Dugtrio", "Meowth", "Persian", "Psyduck", "Golduck", "Mankey", "Primeape", "Growlithe", "Arcanine", "Poliwag", "Poliwhirl", "Poliwrath"];
-        name = names[(i % names.length)] || `Species #${i}`;
-        const typeOptions = [["normal"], ["grass"], ["fire"], ["water"], ["electric"], ["poison"], ["ground"], ["flying"], ["bug"], ["psychic"]];
-        types = typeOptions[(i % typeOptions.length)] || ["normal"];
-      }
 
       list.push({ id: i, name, types });
     }
     return list;
   }, [selectedRegion]);
 
-  // Apply Search Query & Filter logic
   const filteredSpecies = useMemo(() => {
     return regionalSpecies.filter((pkmn) => {
-      const matchesSearch = pkmn.name.toLowerCase().includes(searchQuery.toLowerCase()) || pkmn.id.toString() === searchQuery;
-      const matchesType = selectedType === "all" || pkmn.types.includes(selectedType);
+      const matchesSearch = pkmn.name.toLowerCase().includes(searchQuery.toLowerCase()) || pkmn.id.toString().includes(searchQuery);
+      const matchesType = selectedType === "all" || pkmn.types.includes(selectedType.toLowerCase());
       return matchesSearch && matchesType;
     });
   }, [regionalSpecies, searchQuery, selectedType]);
 
+  // If a region is selected, display the rich dossier view
   if (selectedRegion) {
     const details = getRegionDetail(selectedRegion.id);
+    const bannerStyle = getRegionCardStyles(selectedRegion.id, isLightTheme);
 
     return (
-      <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-6">
-        {/* Back navigation */}
+      <div className="max-w-[1400px] mx-auto px-4 md:px-8 mt-2 mb-16 animate-fadeIn">
+        {/* Back Button */}
         <button
           onClick={() => onSelectRegion(null)}
-          className={`mb-8 px-5 py-2.5 rounded-xl flex items-center gap-2 cursor-pointer text-xs font-extrabold uppercase tracking-wider border transition-all ${
+          className={`mb-6 px-5 py-2.5 rounded-xl flex items-center gap-2 cursor-pointer text-xs font-extrabold uppercase tracking-wider border transition-all hover:-translate-x-1 shadow-sm ${
             isLightTheme
               ? "bg-white hover:bg-slate-50 border-slate-300 text-slate-800 shadow-sm"
               : "bg-slate-900 border-white/10 text-slate-100 hover:bg-white/5 shadow-md"
           }`}
         >
           <ArrowLeft className="w-4 h-4 text-blue-500" />
-          <span>Back to Regions</span>
+          <span>Return to All Regions</span>
         </button>
 
-        {/* Elegant Title Block Replacing standard banner */}
-        {(() => {
-          const bannerStyle = getRegionCardStyles(selectedRegion.id, isLightTheme);
-          return (
-            <div className={`mb-10 p-8 md:p-12 rounded-[2rem] border relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-6 ${
-              bannerStyle.gradient
+        {/* Region Banner Header */}
+        <div className={`mb-8 p-8 md:p-10 rounded-[2.5rem] border relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-6 ${
+          bannerStyle.gradient
+        }`}>
+          {renderJapaneseBackground(selectedRegion.nativeName)}
+
+          <div className="relative z-10 max-w-2xl">
+            <span className={`text-xs font-mono font-black uppercase tracking-[0.25em] block mb-2 ${
+              isLightTheme ? "text-slate-800/80" : "text-white/80"
             }`}>
-              {/* Scrolling Japanese Background Train */}
-              {renderJapaneseBackground(selectedRegion.nativeName)}
+              GEN {selectedRegion.generationIndex} · {selectedRegion.nativeName}
+            </span>
+            <h1 className={`font-display font-black text-4xl md:text-6xl tracking-tight mb-3 uppercase ${bannerStyle.title}`}>
+              {selectedRegion.name} Region
+            </h1>
+            <p className={`text-sm md:text-base leading-relaxed font-semibold ${
+              isLightTheme ? "text-slate-800" : "text-slate-100"
+            }`}>
+              {selectedRegion.description}
+            </p>
+          </div>
 
-              {/* Decorative neon colored background elements */}
-              <div className="absolute -right-20 -top-20 w-80 h-80 rounded-full blur-[100px] opacity-25 bg-[#FAF7F0]/10" />
+          <div className="flex flex-col sm:flex-row gap-3 relative z-10 shrink-0 w-full sm:w-auto">
+            <span className={`text-xs px-4 py-2.5 rounded-full font-mono font-black border flex items-center gap-1.5 justify-center ${bannerStyle.badge}`}>
+              {selectedRegion.pokemonCount || 151} SPECIES
+            </span>
+            <span className={`text-xs px-4 py-2.5 rounded-full font-mono font-black border flex items-center gap-1.5 justify-center ${bannerStyle.badge}`}>
+              {selectedRegion.badgeCount > 0 ? `${selectedRegion.badgeCount} GYM BADGES` : "ISLAND TRIALS"}
+            </span>
+          </div>
+        </div>
 
-              <div className="relative z-10 max-w-2xl">
-                <span className={`text-xs font-mono font-black uppercase tracking-[0.25em] block mb-3 ${
-                  isLightTheme ? "text-slate-800/80" : "text-white/80"
-                }`}>
-                  MIGHTY REGION OF GEN {selectedRegion.generationIndex}
-                </span>
-                <h1 className={`font-display font-black text-4xl md:text-6xl tracking-tight mb-4 uppercase ${bannerStyle.title}`}>
-                  {selectedRegion.name}
-                </h1>
-                <p className={`text-sm md:text-base leading-relaxed font-semibold ${
-                  isLightTheme ? "text-slate-800" : "text-slate-100"
-                }`}>
-                  {selectedRegion.description}
+        {/* Subpage Tab Bar */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-8 border-b border-slate-500/15 scrollbar-none">
+          <button
+            onClick={() => setRegionTab("overview")}
+            className={`px-5 py-2.5 rounded-xl border text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-2 cursor-pointer transition-all ${
+              regionTab === "overview"
+                ? "bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-500/25"
+                : isLightTheme
+                  ? "bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200"
+                  : "bg-white/5 border-white/5 text-slate-400 hover:bg-white/10"
+            }`}
+          >
+            <BookOpen className="w-4 h-4" />
+            <span>Overview & Lore</span>
+          </button>
+
+          <button
+            onClick={() => setRegionTab("landmarks")}
+            className={`px-5 py-2.5 rounded-xl border text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-2 cursor-pointer transition-all ${
+              regionTab === "landmarks"
+                ? "bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-500/25"
+                : isLightTheme
+                  ? "bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200"
+                  : "bg-white/5 border-white/5 text-slate-400 hover:bg-white/10"
+            }`}
+          >
+            <Compass className="w-4 h-4" />
+            <span>Landmarks & Map</span>
+          </button>
+
+          <button
+            onClick={() => setRegionTab("roster")}
+            className={`px-5 py-2.5 rounded-xl border text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-2 cursor-pointer transition-all ${
+              regionTab === "roster"
+                ? "bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-500/25"
+                : isLightTheme
+                  ? "bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200"
+                  : "bg-white/5 border-white/5 text-slate-400 hover:bg-white/10"
+            }`}
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>Starters & Legendaries</span>
+          </button>
+
+          <button
+            onClick={() => setRegionTab("gyms")}
+            className={`px-5 py-2.5 rounded-xl border text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-2 cursor-pointer transition-all ${
+              regionTab === "gyms"
+                ? "bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-500/25"
+                : isLightTheme
+                  ? "bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200"
+                  : "bg-white/5 border-white/5 text-slate-400 hover:bg-white/10"
+            }`}
+          >
+            <Crown className="w-4 h-4" />
+            <span>Gyms & Elite Four</span>
+          </button>
+
+          <button
+            onClick={() => setRegionTab("wild")}
+            className={`px-5 py-2.5 rounded-xl border text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-2 cursor-pointer transition-all ${
+              regionTab === "wild"
+                ? "bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-500/25"
+                : isLightTheme
+                  ? "bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200"
+                  : "bg-white/5 border-white/5 text-slate-400 hover:bg-white/10"
+            }`}
+          >
+            <Layers className="w-4 h-4" />
+            <span>Regional Species Grid</span>
+          </button>
+        </div>
+
+        {/* TAB 1: OVERVIEW & LORE */}
+        {regionTab === "overview" && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
+            {/* Top 3 Pillar Cards: Professor, Champion, Villain */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className={`p-6 rounded-3xl border ${isLightTheme ? "bg-white border-slate-200 shadow-sm" : "bg-[#131C31]/40 border-white/5"}`}>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-2.5 rounded-xl bg-indigo-500/10 text-indigo-400">
+                    <Users className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-mono text-slate-500 uppercase tracking-widest font-bold">Resident Professor</p>
+                    <h4 className={`font-display font-black text-base mt-0.5 ${isLightTheme ? "text-slate-900" : "text-slate-100"}`}>{selectedRegion.professor}</h4>
+                  </div>
+                </div>
+                <p className="text-xs text-slate-400 leading-relaxed font-medium">{details.professorDesc}</p>
+              </div>
+
+              <div className={`p-6 rounded-3xl border ${isLightTheme ? "bg-white border-slate-200 shadow-sm" : "bg-[#131C31]/40 border-white/5"}`}>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-400">
+                    <Award className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-mono text-slate-500 uppercase tracking-widest font-bold">Regional Champion</p>
+                    <h4 className={`font-display font-black text-base mt-0.5 ${isLightTheme ? "text-slate-900" : "text-slate-100"}`}>{selectedRegion.champion}</h4>
+                  </div>
+                </div>
+                <p className="text-xs text-slate-400 leading-relaxed font-medium">{details.championDesc}</p>
+              </div>
+
+              <div className={`p-6 rounded-3xl border ${isLightTheme ? "bg-white border-slate-200 shadow-sm" : "bg-[#131C31]/40 border-white/5"}`}>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-2.5 rounded-xl bg-red-500/10 text-red-400">
+                    <Shield className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-mono text-slate-500 uppercase tracking-widest font-bold">Villain Syndicate</p>
+                    <h4 className={`font-display font-black text-base mt-0.5 ${isLightTheme ? "text-slate-900" : "text-slate-100"}`}>{details.villainName}</h4>
+                  </div>
+                </div>
+                <p className="text-xs text-slate-400 leading-relaxed font-medium">{details.villainDesc}</p>
+              </div>
+            </div>
+
+            {/* Climate & Topography + Regional Gimmick Mechanics */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className={`p-6 md:p-8 rounded-[2rem] border ${isLightTheme ? "bg-white border-slate-200 shadow-sm" : "bg-[#131C31]/40 border-white/5"}`}>
+                <div className="flex items-center gap-3 mb-3">
+                  <Globe className="w-5 h-5 text-emerald-400" />
+                  <h3 className={`font-display font-black text-lg uppercase ${isLightTheme ? "text-slate-900" : "text-white"}`}>
+                    Climate & Topography
+                  </h3>
+                </div>
+                <p className={`text-xs md:text-sm leading-relaxed ${isLightTheme ? "text-slate-700" : "text-slate-300"}`}>
+                  {details.climateOverview}
                 </p>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-3 relative z-10 shrink-0 w-full sm:w-auto">
-                <span className={`text-xs px-4 py-2.5 rounded-full font-mono font-black border flex items-center gap-1.5 justify-center ${bannerStyle.badge}`}>
-                  {selectedRegion.pokemonCount || 151} SPECIES
-                </span>
-                <span className={`text-xs px-4 py-2.5 rounded-full font-mono font-black border flex items-center gap-1.5 justify-center ${bannerStyle.badge}`}>
-                  {selectedRegion.badgeCount > 0 ? `${selectedRegion.badgeCount} GYM BADGES` : "ISLAND TRIALS"}
-                </span>
-              </div>
-            </div>
-          );
-        })()}
-
-        {/* 3 Columns: Resident Professor, Regional Champion, Notable Villain Syndicate */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          {/* Card 1: Professor */}
-          <div className={`p-6 rounded-2xl border transition-all ${
-            isLightTheme 
-              ? "bg-white border-slate-200 shadow-sm" 
-              : "bg-[#131C31]/40 border-white/5 hover:border-white/10"
-          }`}>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2.5 rounded-xl bg-indigo-500/10 text-indigo-400">
-                <Users className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-[10px] font-mono text-slate-500 uppercase tracking-widest font-bold">Resident Professor</p>
-                <h4 className={`font-display font-extrabold text-sm mt-0.5 ${isLightTheme ? "text-slate-900" : "text-slate-100"}`}>{selectedRegion.professor}</h4>
-              </div>
-            </div>
-            <p className="text-xs text-slate-400 leading-relaxed font-medium">
-              {details.professorDesc}
-            </p>
-          </div>
-
-          {/* Card 2: Champion */}
-          <div className={`p-6 rounded-2xl border transition-all ${
-            isLightTheme 
-              ? "bg-white border-slate-200 shadow-sm" 
-              : "bg-[#131C31]/40 border-white/5 hover:border-white/10"
-          }`}>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-400">
-                <Award className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-[10px] font-mono text-slate-500 uppercase tracking-widest font-bold">Regional Champion</p>
-                <h4 className={`font-display font-extrabold text-sm mt-0.5 ${isLightTheme ? "text-slate-900" : "text-slate-100"}`}>{selectedRegion.champion}</h4>
-              </div>
-            </div>
-            <p className="text-xs text-slate-400 leading-relaxed font-medium">
-              {details.championDesc}
-            </p>
-          </div>
-
-          {/* Card 3: Villain */}
-          <div className={`p-6 rounded-2xl border transition-all ${
-            isLightTheme 
-              ? "bg-white border-slate-200 shadow-sm" 
-              : "bg-[#131C31]/40 border-white/5 hover:border-white/10"
-          }`}>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2.5 rounded-xl bg-red-500/10 text-red-400">
-                <Shield className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-[10px] font-mono text-slate-500 uppercase tracking-widest font-bold">Notable Villain Syndicate</p>
-                <h4 className={`font-display font-extrabold text-sm mt-0.5 ${isLightTheme ? "text-slate-900" : "text-slate-100"}`}>{details.villainName}</h4>
-              </div>
-            </div>
-            <p className="text-xs text-slate-400 leading-relaxed font-medium">
-              {details.villainDesc}
-            </p>
-          </div>
-        </div>
-
-        {/* Interactive Landmarks Map */}
-        <div className="mb-14">
-          <GraphicalRegionMap
-            regionId={selectedRegion.id}
-            isLightTheme={isLightTheme}
-          />
-        </div>
-
-        {/* Starter Partners */}
-        <div className="mb-14">
-          <div className="flex items-center gap-2 mb-6">
-            <Sparkles className="w-5 h-5 text-yellow-400" />
-            <h2 className="font-display font-extrabold text-2xl tracking-tight uppercase">
-              Starter Partners
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {details.starters.map((starter) => (
-              <div
-                key={starter.id}
-                onClick={() => onSelectPokemonById(starter.id)}
-                className={`p-6 rounded-[2rem] border cursor-pointer hover:scale-[1.02] active:scale-[0.99] transition-all flex flex-col justify-between group h-[380px] relative overflow-hidden ${
-                  isLightTheme
-                    ? "bg-white border-slate-200 hover:border-blue-500/40 shadow-sm shadow-slate-100"
-                    : "bg-[#0E1726]/40 border-white/5 hover:border-blue-500/20"
-                }`}
-              >
-                {/* Visual Glow Layer */}
-                <div className="absolute inset-0 bg-gradient-to-b from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-
-                {/* Header */}
-                <div className="flex justify-between items-start relative z-10">
+              <div className={`p-6 md:p-8 rounded-[2rem] border ${isLightTheme ? "bg-white border-slate-200 shadow-sm" : "bg-[#131C31]/40 border-white/5"}`}>
+                <div className="flex items-center gap-3 mb-3">
+                  <Zap className="w-5 h-5 text-amber-400" />
                   <div>
-                    <span className="text-[10px] font-mono font-bold text-slate-500 block">
-                      #{starter.id.toString().padStart(4, "0")}
-                    </span>
-                    <h3 className={`font-display font-black text-xl tracking-tight mt-0.5 ${
-                      isLightTheme ? "text-slate-900" : "text-white"
-                    }`}>
-                      {starter.name}
-                    </h3>
-                    <p className="text-[10px] font-mono text-blue-500 dark:text-blue-400 uppercase font-bold mt-1">
-                      {starter.category}
-                    </p>
-                  </div>
-                  <div className="flex gap-1.5">
-                    {starter.types.map((t) => (
-                      <span
-                        key={t}
-                        className={`text-[9px] font-bold font-mono px-2 py-0.5 rounded-full uppercase border ${
-                          isLightTheme
-                            ? "bg-slate-50 border-slate-200 text-slate-700"
-                            : "bg-white/5 border-white/10 text-slate-300"
-                        }`}
-                      >
-                        {t}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Big Image Artwork in Center */}
-                <div className="flex-1 flex items-center justify-center relative my-4">
-                  <div className="absolute w-24 h-24 rounded-full bg-blue-500/5 blur-xl group-hover:bg-blue-500/10 transition-colors pointer-events-none" />
-                  <img
-                    src={getOfficialArtwork(starter.id)}
-                    alt={starter.name}
-                    className="w-36 h-36 object-contain relative z-10 group-hover:scale-110 transition-transform duration-300"
-                  />
-                </div>
-
-                {/* Stats details bar */}
-                <div className="relative z-10 space-y-2 mt-auto">
-                  <div className={`grid grid-cols-2 gap-x-4 gap-y-1.5 text-[10px] border-t pt-3 ${
-                    isLightTheme ? "border-slate-100" : "border-white/5"
-                  }`}>
-                    <div className="flex justify-between">
-                      <span className="text-slate-500 font-bold uppercase font-mono">HP</span>
-                      <span className={`font-bold ${isLightTheme ? "text-slate-800" : "text-slate-200"}`}>{starter.stats.hp}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-500 font-bold uppercase font-mono">Speed</span>
-                      <span className={`font-bold ${isLightTheme ? "text-slate-800" : "text-slate-200"}`}>{starter.stats.speed}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-500 font-bold uppercase font-mono">Atk</span>
-                      <span className={`font-bold ${isLightTheme ? "text-slate-800" : "text-slate-200"}`}>{starter.stats.attack}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-500 font-bold uppercase font-mono">Def</span>
-                      <span className={`font-bold ${isLightTheme ? "text-slate-800" : "text-slate-200"}`}>{starter.stats.defense}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Legendary & Mythical Pokémon */}
-        <div className="mb-14">
-          <div className="flex items-center gap-2 mb-6">
-            <Heart className="w-5 h-5 text-red-500" />
-            <h2 className="font-display font-extrabold text-2xl tracking-tight uppercase">
-              Legendary & Mythical Pokémon
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[...details.legendaries, ...details.mythicals].map((legend) => (
-              <div
-                key={legend.id}
-                onClick={() => onSelectPokemonById(legend.id)}
-                className={`p-6 rounded-[2rem] border cursor-pointer hover:scale-[1.02] active:scale-[0.99] transition-all flex flex-col justify-between group h-[360px] relative overflow-hidden ${
-                  isLightTheme
-                    ? "bg-white border-slate-200 hover:border-amber-500/40 shadow-sm"
-                    : "bg-[#0E1726]/40 border-white/5 hover:border-amber-500/20"
-                }`}
-              >
-                {/* Glow outline */}
-                <div className="absolute inset-0 bg-gradient-to-b from-amber-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-
-                <div className="flex justify-between items-start relative z-10">
-                  <div>
-                    <span className="text-[10px] font-mono font-bold text-slate-500 block">
-                      #{legend.id.toString().padStart(4, "0")}
-                    </span>
-                    <h3 className={`font-display font-black text-lg tracking-tight mt-0.5 ${
-                      isLightTheme ? "text-slate-900" : "text-white"
-                    }`}>
-                      {legend.name}
+                    <span className="text-[10px] font-mono font-bold text-slate-500 uppercase">Signature Feature</span>
+                    <h3 className={`font-display font-black text-lg uppercase ${isLightTheme ? "text-slate-900" : "text-white"}`}>
+                      {details.gimmickName}
                     </h3>
                   </div>
-                  <span className="text-[9px] font-mono font-extrabold px-2 py-0.5 rounded-full uppercase bg-amber-500/10 border border-amber-500/20 text-amber-500 dark:text-amber-400">
-                    LEGENDARY
+                </div>
+                <p className={`text-xs md:text-sm leading-relaxed ${isLightTheme ? "text-slate-700" : "text-slate-300"}`}>
+                  {details.gimmickDesc}
+                </p>
+              </div>
+            </div>
+
+            {/* Pseudo Legendary Showcase */}
+            {details.pseudoLegendary && (
+              <div className={`p-6 md:p-8 rounded-[2rem] border flex flex-col md:flex-row items-center gap-6 ${
+                isLightTheme ? "bg-white border-slate-200 shadow-sm" : "bg-[#131C31]/40 border-white/5"
+              }`}>
+                <img
+                  src={getOfficialArtwork(details.pseudoLegendary.id)}
+                  alt={details.pseudoLegendary.name}
+                  className="w-28 h-28 object-contain drop-shadow-lg shrink-0 cursor-pointer hover:scale-105 transition-transform"
+                  onClick={() => onSelectPokemonById(details.pseudoLegendary!.id)}
+                />
+                <div>
+                  <span className="text-[10px] font-mono font-black uppercase text-purple-400 tracking-wider">
+                    [ Regional Pseudo-Legendary Line ]
                   </span>
+                  <h3 className={`font-display font-black text-xl uppercase mt-1 ${isLightTheme ? "text-slate-900" : "text-white"}`}>
+                    {details.pseudoLegendary.name} (BST 600)
+                  </h3>
+                  <p className="text-xs text-slate-400 leading-relaxed mt-2">
+                    {details.pseudoLegendary.description}
+                  </p>
                 </div>
-
-                <div className="flex-1 flex items-center justify-center relative my-4">
-                  <div className="absolute w-24 h-24 rounded-full bg-amber-500/5 blur-xl group-hover:bg-amber-500/10 transition-colors pointer-events-none" />
-                  <img
-                    src={getOfficialArtwork(legend.id)}
-                    alt={legend.name}
-                    className="w-32 h-32 object-contain relative z-10 group-hover:scale-110 transition-transform duration-300"
-                  />
-                </div>
-
-                <p className={`text-[11px] leading-relaxed line-clamp-3 text-center mb-1 ${
-                  isLightTheme ? "text-slate-600" : "text-slate-400"
-                }`}>
-                  {legend.description}
-                </p>
               </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Gyms & Badges */}
-        {details.gyms && details.gyms.length > 0 && (
-          <div className="mb-14">
-            <div className="flex items-center gap-2 mb-6">
-              <Award className="w-5 h-5 text-indigo-400" />
-              <h2 className="font-display font-extrabold text-2xl tracking-tight uppercase">
-                Regional Gyms
-              </h2>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              {details.gyms.map((gym, index) => (
-                <div
-                  key={gym.name}
-                  className={`p-5 rounded-2xl border flex flex-col justify-between transition-all hover:scale-102 ${
-                    isLightTheme
-                      ? "bg-white border-slate-200 shadow-sm"
-                      : "bg-[#131C31]/40 border-white/5 hover:border-white/10"
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-[10px] font-mono font-bold text-slate-500">
-                      GYM 0{index + 1}
-                    </span>
-                    <span className="text-xl">{gym.badgeUrl}</span>
-                  </div>
-
-                  <div>
-                    <h4 className={`font-display font-black text-base tracking-tight ${
-                      isLightTheme ? "text-slate-900" : "text-white"
-                    }`}>
-                      {gym.name}
-                    </h4>
-                    <p className="text-[10px] font-mono font-bold text-blue-500 dark:text-blue-400 uppercase mt-0.5">
-                      {gym.typeSpecialty} Specialist
-                    </p>
-                  </div>
-
-                  <div className={`mt-4 pt-3 border-t flex items-center justify-between text-[10px] font-mono ${
-                    isLightTheme ? "border-slate-100" : "border-white/5"
-                  }`}>
-                    <span className="text-slate-500 dark:text-slate-400 font-bold uppercase">Badge</span>
-                    <span className={`font-bold ${isLightTheme ? "text-slate-800" : "text-slate-200"}`}>{gym.badgeName}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+            )}
+          </motion.div>
         )}
 
-        {/* Regional Wild Grid species list */}
-        <div className="mb-14">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-            <div className="flex items-center gap-2">
-              <Info className="w-5 h-5 text-teal-400" />
-              <h2 className="font-display font-extrabold text-2xl tracking-tight uppercase">
-                Regional Wild Grid
-              </h2>
-            </div>
+        {/* TAB 2: LANDMARKS & MAP */}
+        {regionTab === "landmarks" && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
+            <GraphicalRegionMap regionId={selectedRegion.id} isLightTheme={isLightTheme} />
 
-            {/* Quick search / filters */}
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="relative">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 transform -translate-y-1/2" />
-                <input
-                  type="text"
-                  placeholder="Search species..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className={`pl-10 pr-4 py-2 text-xs rounded-xl border focus:outline-none focus:ring-1 focus:ring-blue-500 w-full sm:w-48 ${
-                    isLightTheme
-                      ? "bg-white border-slate-200 text-slate-800 placeholder-slate-400"
-                      : "bg-slate-900 border-white/10 text-white placeholder-slate-400"
-                  }`}
-                />
+            {/* Landmarks Cards Grid */}
+            <div className="mt-8">
+              <h3 className={`font-display font-black text-xl uppercase mb-6 ${isLightTheme ? "text-slate-900" : "text-white"}`}>
+                Key Geographic Locations & Landmarks
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {details.landmarks.map((lm) => (
+                  <div key={lm.name} className={`p-6 rounded-2xl border ${isLightTheme ? "bg-white border-slate-200 shadow-sm" : "bg-[#131C31]/40 border-white/5"}`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className={`font-display font-black text-base ${isLightTheme ? "text-slate-900" : "text-white"}`}>
+                        {lm.name}
+                      </h4>
+                      <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 uppercase">
+                        {lm.type}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400 leading-relaxed">
+                      {lm.description}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* TAB 3: STARTERS & LEGENDARIES */}
+        {regionTab === "roster" && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-12">
+            {/* Starter Partners */}
+            <div>
+              <div className="flex items-center gap-2 mb-6">
+                <Sparkles className="w-5 h-5 text-yellow-400" />
+                <h2 className="font-display font-extrabold text-2xl tracking-tight uppercase">
+                  Starter Partners
+                </h2>
               </div>
 
-              <select
-                value={selectedType}
-                onChange={(e) => setSelectedType(e.target.value)}
-                className={`px-4 py-2 text-xs rounded-xl border focus:outline-none font-bold ${
-                  isLightTheme
-                    ? "bg-white border-slate-200 text-slate-800"
-                    : "bg-slate-900 border-white/10 text-white"
-                }`}
-              >
-                <option value="all">All Types</option>
-                <option value="grass">Grass</option>
-                <option value="fire">Fire</option>
-                <option value="water">Water</option>
-                <option value="electric">Electric</option>
-                <option value="psychic">Psychic</option>
-                <option value="poison">Poison</option>
-                <option value="normal">Normal</option>
-              </select>
-            </div>
-          </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {details.starters.map((starter) => (
+                  <div
+                    key={starter.id}
+                    onClick={() => onSelectPokemonById(starter.id)}
+                    className={`p-6 rounded-[2rem] border cursor-pointer hover:scale-[1.02] active:scale-[0.99] transition-all flex flex-col justify-between group h-[380px] relative overflow-hidden ${
+                      isLightTheme
+                        ? "bg-white border-slate-200 hover:border-blue-500/40 shadow-sm shadow-slate-100"
+                        : "bg-[#0E1726]/40 border-white/5 hover:border-blue-500/20"
+                    }`}
+                  >
+                    <div className="flex justify-between items-start relative z-10">
+                      <div>
+                        <span className="text-[10px] font-mono font-bold text-slate-500 block">
+                          #{starter.id.toString().padStart(4, "0")}
+                        </span>
+                        <h3 className={`font-display font-black text-xl tracking-tight mt-0.5 ${
+                          isLightTheme ? "text-slate-900" : "text-white"
+                        }`}>
+                          {starter.name}
+                        </h3>
+                        <p className="text-[10px] font-mono text-blue-500 dark:text-blue-400 uppercase font-bold mt-1">
+                          {starter.category}
+                        </p>
+                      </div>
+                      <div className="flex gap-1.5">
+                        {starter.types.map((t) => (
+                          <span
+                            key={t}
+                            className={`text-[9px] font-bold font-mono px-2 py-0.5 rounded-full uppercase border ${
+                              isLightTheme
+                                ? "bg-slate-50 border-slate-200 text-slate-700"
+                                : "bg-white/5 border-white/10 text-slate-300"
+                            }`}
+                          >
+                            {t}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
 
-          {filteredSpecies.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
-              {filteredSpecies.map((pkmn) => (
-                <div
-                  key={pkmn.id}
-                  onClick={() => onSelectPokemonById(pkmn.id)}
-                  className={`p-3.5 rounded-2xl border cursor-pointer flex flex-col items-center justify-between transition-all duration-200 hover:-translate-y-1 group ${
+                    <div className="flex-1 flex items-center justify-center relative my-4">
+                      <img
+                        src={getOfficialArtwork(starter.id)}
+                        alt={starter.name}
+                        className="w-36 h-36 object-contain relative z-10 group-hover:scale-110 transition-transform duration-300"
+                      />
+                    </div>
+
+                    <div className="relative z-10 space-y-2 mt-auto">
+                      <div className={`grid grid-cols-2 gap-x-4 gap-y-1.5 text-[10px] border-t pt-3 ${
+                        isLightTheme ? "border-slate-100" : "border-white/5"
+                      }`}>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500 font-bold uppercase font-mono">HP</span>
+                          <span className={`font-bold ${isLightTheme ? "text-slate-800" : "text-slate-200"}`}>{starter.stats.hp}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500 font-bold uppercase font-mono">Speed</span>
+                          <span className={`font-bold ${isLightTheme ? "text-slate-800" : "text-slate-200"}`}>{starter.stats.speed}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500 font-bold uppercase font-mono">Atk</span>
+                          <span className={`font-bold ${isLightTheme ? "text-slate-800" : "text-slate-200"}`}>{starter.stats.attack}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500 font-bold uppercase font-mono">Def</span>
+                          <span className={`font-bold ${isLightTheme ? "text-slate-800" : "text-slate-200"}`}>{starter.stats.defense}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Legendary & Mythicals */}
+            <div>
+              <div className="flex items-center gap-2 mb-6">
+                <Heart className="w-5 h-5 text-red-500" />
+                <h2 className="font-display font-extrabold text-2xl tracking-tight uppercase">
+                  Legendary & Mythical Roster
+                </h2>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {[...details.legendaries, ...details.mythicals].map((legend) => (
+                  <div
+                    key={legend.id}
+                    onClick={() => onSelectPokemonById(legend.id)}
+                    className={`p-6 rounded-[2rem] border cursor-pointer hover:scale-[1.02] active:scale-[0.99] transition-all flex flex-col justify-between group h-[360px] relative overflow-hidden ${
+                      isLightTheme
+                        ? "bg-white border-slate-200 hover:border-amber-500/40 shadow-sm"
+                        : "bg-[#0E1726]/40 border-white/5 hover:border-amber-500/20"
+                    }`}
+                  >
+                    <div className="flex justify-between items-start relative z-10">
+                      <div>
+                        <span className="text-[10px] font-mono font-bold text-slate-500 block">
+                          #{legend.id.toString().padStart(4, "0")}
+                        </span>
+                        <h3 className={`font-display font-black text-lg tracking-tight mt-0.5 ${
+                          isLightTheme ? "text-slate-900" : "text-white"
+                        }`}>
+                          {legend.name}
+                        </h3>
+                      </div>
+                      <span className="text-[9px] font-mono font-extrabold px-2 py-0.5 rounded-full uppercase bg-amber-500/10 border border-amber-500/20 text-amber-500">
+                        LEGENDARY
+                      </span>
+                    </div>
+
+                    <div className="flex-1 flex items-center justify-center relative my-4">
+                      <img
+                        src={getOfficialArtwork(legend.id)}
+                        alt={legend.name}
+                        className="w-32 h-32 object-contain relative z-10 group-hover:scale-110 transition-transform duration-300"
+                      />
+                    </div>
+
+                    <p className={`text-[11px] leading-relaxed line-clamp-3 text-center mb-1 ${
+                      isLightTheme ? "text-slate-600" : "text-slate-400"
+                    }`}>
+                      {legend.description}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* TAB 4: GYMS & ELITE FOUR */}
+        {regionTab === "gyms" && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-12">
+            {/* Gym Leaders */}
+            {details.gyms && details.gyms.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-6">
+                  <Award className="w-5 h-5 text-indigo-400" />
+                  <h2 className="font-display font-extrabold text-2xl tracking-tight uppercase">
+                    Regional Gym Leaders & Badges
+                  </h2>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+                  {details.gyms.map((gym, index) => (
+                    <div
+                      key={gym.name}
+                      className={`p-6 rounded-2xl border flex flex-col justify-between transition-all ${
+                        isLightTheme
+                          ? "bg-white border-slate-200 shadow-sm"
+                          : "bg-[#131C31]/40 border-white/5 hover:border-white/10"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-[10px] font-mono font-bold text-slate-500">
+                          GYM 0{index + 1}
+                        </span>
+                        <span className="text-xl">{gym.badgeUrl}</span>
+                      </div>
+
+                      <div>
+                        <h4 className={`font-display font-black text-lg tracking-tight ${
+                          isLightTheme ? "text-slate-900" : "text-white"
+                        }`}>
+                          {gym.name}
+                        </h4>
+                        <p className="text-[10px] font-mono font-bold text-blue-500 uppercase mt-0.5">
+                          {gym.typeSpecialty} Specialist
+                        </p>
+                      </div>
+
+                      <div className={`mt-4 pt-3 border-t flex items-center justify-between text-[11px] font-mono ${
+                        isLightTheme ? "border-slate-100" : "border-white/5"
+                      }`}>
+                        <span className="text-slate-500 font-bold uppercase">Badge Name</span>
+                        <span className={`font-bold ${isLightTheme ? "text-slate-800" : "text-slate-200"}`}>{gym.badgeName}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Elite Four */}
+            {details.eliteFour && details.eliteFour.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-6">
+                  <Crown className="w-5 h-5 text-amber-400" />
+                  <h2 className="font-display font-extrabold text-2xl tracking-tight uppercase">
+                    Elite Four Champions Council
+                  </h2>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+                  {details.eliteFour.map((e4, index) => (
+                    <div
+                      key={e4.name}
+                      className={`p-6 rounded-2xl border flex flex-col justify-between ${
+                        isLightTheme
+                          ? "bg-white border-slate-200 shadow-sm"
+                          : "bg-[#131C31]/40 border-white/5"
+                      }`}
+                    >
+                      <span className="text-[10px] font-mono font-bold text-amber-500 uppercase block mb-1">
+                        ELITE MEMBER 0{index + 1}
+                      </span>
+                      <h4 className={`font-display font-black text-lg ${isLightTheme ? "text-slate-900" : "text-white"}`}>
+                        {e4.name}
+                      </h4>
+                      <p className="text-xs text-blue-400 font-mono font-bold mt-1 uppercase">
+                        {e4.typeSpecialty} Master
+                      </p>
+                      <div className="mt-4 pt-3 border-t border-slate-500/10 text-[11px] font-mono font-bold text-slate-400 flex justify-between">
+                        <span>ACE SPECIES:</span>
+                        <span className="text-amber-400">{e4.acePokemon}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        {/* TAB 5: REGIONAL WILD SPECIES GRID */}
+        {regionTab === "wild" && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+              <div className="flex items-center gap-2">
+                <Layers className="w-5 h-5 text-teal-400" />
+                <h2 className="font-display font-extrabold text-2xl tracking-tight uppercase">
+                  Regional Wild Species Catalog
+                </h2>
+              </div>
+
+              {/* Quick Search and Type Select */}
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="relative">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 transform -translate-y-1/2" />
+                  <input
+                    type="text"
+                    placeholder="Search species..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className={`pl-10 pr-4 py-2 text-xs rounded-xl border focus:outline-none focus:ring-1 focus:ring-blue-500 w-full sm:w-48 ${
+                      isLightTheme
+                        ? "bg-white border-slate-200 text-slate-800 placeholder-slate-400"
+                        : "bg-slate-900 border-white/10 text-white placeholder-slate-400"
+                    }`}
+                  />
+                </div>
+
+                <select
+                  value={selectedType}
+                  onChange={(e) => setSelectedType(e.target.value)}
+                  className={`px-4 py-2 text-xs rounded-xl border focus:outline-none font-bold ${
                     isLightTheme
-                      ? "bg-white border-slate-200 hover:border-blue-500/40 shadow-sm"
-                      : "bg-[#131C31]/40 border-white/5 hover:border-white/10"
+                      ? "bg-white border-slate-200 text-slate-800"
+                      : "bg-slate-900 border-white/10 text-white"
                   }`}
                 >
-                  <span className="text-[9px] font-mono font-bold text-slate-500">
-                    #{pkmn.id.toString().padStart(4, "0")}
-                  </span>
-
-                  <img
-                    src={getSprite(pkmn.id)}
-                    alt={pkmn.name}
-                    className="w-16 h-16 object-contain my-1.5 group-hover:scale-110 transition-transform duration-200"
-                  />
-
-                  <h4 className={`text-xs font-bold text-center truncate w-full ${
-                    isLightTheme ? "text-slate-800" : "text-slate-200"
-                  }`}>
-                    {pkmn.name}
-                  </h4>
-                </div>
-              ))}
+                  <option value="all">All Types</option>
+                  <option value="grass">Grass</option>
+                  <option value="fire">Fire</option>
+                  <option value="water">Water</option>
+                  <option value="electric">Electric</option>
+                  <option value="psychic">Psychic</option>
+                  <option value="poison">Poison</option>
+                  <option value="normal">Normal</option>
+                </select>
+              </div>
             </div>
-          ) : (
-            <div className="text-center py-12 text-slate-500 text-sm font-mono border border-dashed border-white/10 rounded-2xl">
-              No matching species found in this region.
-            </div>
-          )}
-        </div>
+
+            {filteredSpecies.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
+                {filteredSpecies.map((pkmn) => (
+                  <div
+                    key={pkmn.id}
+                    onClick={() => onSelectPokemonById(pkmn.id)}
+                    className={`p-3.5 rounded-2xl border cursor-pointer flex flex-col items-center justify-between transition-all duration-200 hover:-translate-y-1 group ${
+                      isLightTheme
+                        ? "bg-white border-slate-200 hover:border-blue-500/40 shadow-sm"
+                        : "bg-[#131C31]/40 border-white/5 hover:border-white/10"
+                    }`}
+                  >
+                    <span className="text-[9px] font-mono font-bold text-slate-500">
+                      #{pkmn.id.toString().padStart(4, "0")}
+                    </span>
+
+                    <img
+                      src={getSprite(pkmn.id)}
+                      alt={pkmn.name}
+                      className="w-16 h-16 object-contain my-1.5 group-hover:scale-110 transition-transform duration-200"
+                    />
+
+                    <h4 className={`text-xs font-bold text-center truncate w-full ${
+                      isLightTheme ? "text-slate-800" : "text-slate-200"
+                    }`}>
+                      {pkmn.name}
+                    </h4>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 text-slate-500 text-sm font-mono border border-dashed border-white/10 rounded-2xl">
+                No matching species found in this region.
+              </div>
+            )}
+          </motion.div>
+        )}
       </div>
     );
   }
 
-  // Horizontal scroll layout
+  // Horizontal scroll layout (Main Page preview)
   if (layout === "scroll") {
     return (
       <div 
@@ -909,7 +995,6 @@ export default function RegionSection({
         onTouchStart={() => setIsHovered(true)}
         onTouchEnd={() => setIsHovered(false)}
       >
-        {/* Left Scroll Navigation Button */}
         <button
           onClick={(e) => {
             e.stopPropagation();
@@ -937,7 +1022,6 @@ export default function RegionSection({
           </svg>
         </button>
 
-        {/* Right Scroll Navigation Button */}
         <button
           onClick={(e) => {
             e.stopPropagation();
@@ -965,7 +1049,6 @@ export default function RegionSection({
           </svg>
         </button>
 
-        {/* Scrollable container */}
         <div 
           ref={scrollRef}
           className="flex gap-6 overflow-x-auto pb-6 px-1 scrollbar-none"
@@ -984,19 +1067,15 @@ export default function RegionSection({
                 onClick={() => onSelectRegion(region)}
                 className={`min-w-[340px] max-w-[360px] p-6 rounded-[2rem] cursor-pointer border relative overflow-hidden transition-all duration-300 hover:-translate-y-1.5 flex flex-col justify-between min-h-[220px] group shadow-lg ${cardStyles.gradient}`}
               >
-                {/* Scrolling Japanese Background Train */}
                 {renderJapaneseBackground(region.nativeName)}
 
-                {/* Content Container */}
                 <div className="flex flex-col justify-between h-full min-h-[170px] relative z-10 pr-24">
-                  {/* Top Row */}
                   <div className="flex items-center justify-between">
                     <span className={`text-[10px] font-extrabold tracking-widest uppercase px-2.5 py-1 rounded-full border ${cardStyles.badge}`}>
                       GENERATION {romanGen}
                     </span>
                   </div>
 
-                  {/* Middle Info */}
                   <div className="mt-4">
                     <h3 className={`font-sans font-black text-3xl tracking-tight uppercase leading-none ${cardStyles.title}`}>
                       {region.name}
@@ -1006,7 +1085,6 @@ export default function RegionSection({
                     </p>
                   </div>
 
-                  {/* Starter Icons Row */}
                   <div className="flex items-center gap-1.5 mt-5">
                     {starters.map((id) => (
                       <div
@@ -1028,7 +1106,6 @@ export default function RegionSection({
                   </div>
                 </div>
 
-                {/* Legendary floating image on the right */}
                 <div className="absolute right-1 bottom-1 w-32 h-32 md:w-34 md:h-34 pointer-events-none">
                   <img
                     src={getOfficialArtwork(legendaryId)}
@@ -1037,7 +1114,6 @@ export default function RegionSection({
                   />
                 </div>
 
-                {/* Diagonal arrow in the top right */}
                 <div className={`absolute right-5 top-5 w-8 h-8 rounded-full flex items-center justify-center border shadow-sm transition-all duration-200 ${cardStyles.arrow}`}>
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -1065,95 +1141,142 @@ export default function RegionSection({
   // Full Grid layout (rendered on Regions tab)
   return (
     <div className="max-w-[1400px] mx-auto px-4 md:px-8 mt-2 mb-16">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {REGIONS_DATA.map((region) => {
-          const starIds = region.starterIds || [1, 4, 7];
-          const starters = region.id === "kanto" ? [1, 4, 7, 25] : starIds;
-          const legendaryId = getRegionLegendaryId(region.id);
-          const slogan = getRegionSlogan(region.id);
-          const romanGen = getRomanGeneration(region.generationIndex);
-          const cardStyles = getRegionCardStyles(region.id, isLightTheme);
+      {/* World Map View ON / OFF Switch Toggle Bar */}
+      <div className={`flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 p-4 md:p-5 rounded-3xl border transition-all ${
+        isLightTheme ? "bg-white/90 border-slate-200/80 shadow-sm" : "bg-[#0C0D10]/50 border-white/5"
+      }`}>
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-2xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 shadow-sm">
+            <Globe className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className={`font-display font-black text-lg uppercase tracking-tight ${isLightTheme ? "text-slate-900" : "text-white"}`}>
+              World Map View
+            </h3>
+            <p className="text-xs text-slate-400">
+              Interactive cartographic overview of all 10 Pokémon regions
+            </p>
+          </div>
+        </div>
 
-          return (
-            <div
-              key={region.id}
-              onClick={() => onSelectRegion(region)}
-              className={`p-6 rounded-[2rem] cursor-pointer border relative overflow-hidden transition-all duration-300 hover:-translate-y-1.5 flex flex-col justify-between min-h-[220px] group shadow-lg ${cardStyles.gradient}`}
-            >
-              {/* Scrolling Japanese Background Train */}
-              {renderJapaneseBackground(region.nativeName)}
+        {/* ON / OFF Switch Toggle */}
+        <button
+          onClick={() => setRegionsViewMode(regionsViewMode === "worldmap" ? "default" : "worldmap")}
+          className="flex items-center gap-3 cursor-pointer group focus:outline-none"
+          title="Toggle between Interactive World Map and Classic Region Cards"
+        >
+          <span className={`text-xs font-mono font-extrabold uppercase transition-colors ${
+            regionsViewMode === "worldmap" ? "text-emerald-500" : "text-slate-400"
+          }`}>
+            {regionsViewMode === "worldmap" ? "World Map ON" : "World Map OFF"}
+          </span>
 
-              {/* Content Container */}
-              <div className="flex flex-col justify-between h-full min-h-[170px] relative z-10 pr-24">
-                {/* Top Row */}
-                <div className="flex items-center justify-between">
-                  <span className={`text-[10px] font-extrabold tracking-widest uppercase px-2.5 py-1 rounded-full border ${cardStyles.badge}`}>
-                    GENERATION {romanGen}
-                  </span>
-                </div>
-
-                {/* Middle Info */}
-                <div className="mt-4">
-                  <h3 className={`font-sans font-black text-3xl tracking-tight uppercase leading-none ${cardStyles.title}`}>
-                    {region.name}
-                  </h3>
-                  <p className={`text-[11px] font-medium leading-tight mt-1.5 max-w-[160px] ${cardStyles.slogan}`}>
-                    {slogan}
-                  </p>
-                </div>
-
-                {/* Starter Icons Row */}
-                <div className="flex items-center gap-1.5 mt-5">
-                  {starters.map((id) => (
-                    <div
-                      key={id}
-                      className={`w-9 h-9 rounded-full flex items-center justify-center border shadow-sm backdrop-blur-sm transition-transform duration-200 hover:scale-110 ${
-                        isLightTheme
-                          ? "bg-white/85 border-slate-200/60"
-                          : "bg-black/15 border-white/10"
-                      }`}
-                      title={`Starter #${id}`}
-                    >
-                      <img
-                        src={getOfficialArtwork(id)}
-                        alt="starter"
-                        className="w-7 h-7 object-contain"
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Legendary floating image on the right */}
-              <div className="absolute right-1 bottom-1 w-32 h-32 md:w-34 md:h-34 pointer-events-none">
-                <img
-                  src={getOfficialArtwork(legendaryId)}
-                  alt="legendary"
-                  className="w-full h-full object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.25)] transition-transform duration-300 group-hover:scale-110 group-hover:-translate-y-1.5"
-                />
-              </div>
-
-              {/* Diagonal arrow in the top right */}
-              <div className={`absolute right-5 top-5 w-8 h-8 rounded-full flex items-center justify-center border shadow-sm transition-all duration-200 ${cardStyles.arrow}`}>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <line x1="7" y1="17" x2="17" y2="7"></line>
-                  <polyline points="7 7 17 7 17 17"></polyline>
-                </svg>
-              </div>
+          <div className={`w-14 h-8 rounded-full p-1 transition-all duration-300 relative border ${
+            regionsViewMode === "worldmap"
+              ? "bg-emerald-500/20 border-emerald-500/50 shadow-inner"
+              : isLightTheme ? "bg-slate-200 border-slate-300" : "bg-white/10 border-white/10"
+          }`}>
+            <div className={`w-6 h-6 rounded-full transition-transform duration-300 shadow-md flex items-center justify-center ${
+              regionsViewMode === "worldmap"
+                ? "translate-x-6 bg-emerald-500 text-white"
+                : "translate-x-0 bg-slate-400 text-slate-900"
+            }`}>
+              <Globe className="w-3.5 h-3.5" />
             </div>
-          );
-        })}
+          </div>
+        </button>
       </div>
+
+      {/* Render selected view */}
+      {regionsViewMode === "worldmap" ? (
+        <WorldMapRegionsView
+          isLightTheme={isLightTheme}
+          onSelectRegion={onSelectRegion}
+        />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {REGIONS_DATA.map((region) => {
+            const starIds = region.starterIds || [1, 4, 7];
+            const starters = region.id === "kanto" ? [1, 4, 7, 25] : starIds;
+            const legendaryId = getRegionLegendaryId(region.id);
+            const slogan = getRegionSlogan(region.id);
+            const romanGen = getRomanGeneration(region.generationIndex);
+            const cardStyles = getRegionCardStyles(region.id, isLightTheme);
+
+            return (
+              <div
+                key={region.id}
+                onClick={() => onSelectRegion(region)}
+                className={`p-6 rounded-[2rem] cursor-pointer border relative overflow-hidden transition-all duration-300 hover:-translate-y-1.5 flex flex-col justify-between min-h-[220px] group shadow-lg ${cardStyles.gradient}`}
+              >
+                {renderJapaneseBackground(region.nativeName)}
+
+                <div className="flex flex-col justify-between h-full min-h-[170px] relative z-10 pr-24">
+                  <div className="flex items-center justify-between">
+                    <span className={`text-[10px] font-extrabold tracking-widest uppercase px-2.5 py-1 rounded-full border ${cardStyles.badge}`}>
+                      GENERATION {romanGen}
+                    </span>
+                  </div>
+
+                  <div className="mt-4">
+                    <h3 className={`font-sans font-black text-3xl tracking-tight uppercase leading-none ${cardStyles.title}`}>
+                      {region.name}
+                    </h3>
+                    <p className={`text-[11px] font-medium leading-tight mt-1.5 max-w-[160px] ${cardStyles.slogan}`}>
+                      {slogan}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 mt-5">
+                    {starters.map((id) => (
+                      <div
+                        key={id}
+                        className={`w-9 h-9 rounded-full flex items-center justify-center border shadow-sm backdrop-blur-sm transition-transform duration-200 hover:scale-110 ${
+                          isLightTheme
+                            ? "bg-white/85 border-slate-200/60"
+                            : "bg-black/15 border-white/10"
+                        }`}
+                        title={`Starter #${id}`}
+                      >
+                        <img
+                          src={getOfficialArtwork(id)}
+                          alt="starter"
+                          className="w-7 h-7 object-contain"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="absolute right-1 bottom-1 w-32 h-32 md:w-34 md:h-34 pointer-events-none">
+                  <img
+                    src={getOfficialArtwork(legendaryId)}
+                    alt="legendary"
+                    className="w-full h-full object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.25)] transition-transform duration-300 group-hover:scale-110 group-hover:-translate-y-1.5"
+                  />
+                </div>
+
+                <div className={`absolute right-5 top-5 w-8 h-8 rounded-full flex items-center justify-center border shadow-sm transition-all duration-200 ${cardStyles.arrow}`}>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <line x1="7" y1="17" x2="17" y2="7"></line>
+                    <polyline points="7 7 17 7 17 17"></polyline>
+                  </svg>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

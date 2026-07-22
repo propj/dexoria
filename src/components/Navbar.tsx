@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Moon, Sun, Menu, X, Heart, Sparkles } from "lucide-react";
+import { Moon, Sun, Menu, X, Heart, Sparkles, User } from "lucide-react";
+import GlobalSearchBar from "./GlobalSearchBar";
+import TrainerLoginModal from "./TrainerLoginModal";
+import { Region } from "../types";
 
 interface NavbarProps {
   activePage: string;
@@ -7,6 +10,8 @@ interface NavbarProps {
   isLightTheme: boolean;
   setIsLightTheme: (val: boolean) => void;
   favoritesCount: number;
+  onSelectPokemonById: (id: number) => void;
+  onSelectRegion: (region: Region) => void;
 }
 
 export default function Navbar({
@@ -15,9 +20,12 @@ export default function Navbar({
   isLightTheme,
   setIsLightTheme,
   favoritesCount,
+  onSelectPokemonById,
+  onSelectRegion,
 }: NavbarProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -35,6 +43,7 @@ export default function Navbar({
     { id: "home", label: "Home" },
     { id: "regions", label: "Regions" },
     { id: "national", label: "Pokédex" },
+    { id: "community", label: "Community" },
     { id: "characters", label: "Char/Item Dex" },
     { id: "poke-ai", label: "Poke AI" },
     { id: "timeline", label: "Timeline" },
@@ -105,10 +114,33 @@ export default function Navbar({
             </button>
           </li>
         ))}
+        {/* Common Global Search Bar */}
+        <li className="ml-1 shrink-0">
+          <GlobalSearchBar
+            isLightTheme={isLightTheme}
+            onSelectPokemonById={onSelectPokemonById}
+            onSelectRegion={onSelectRegion}
+            setActivePage={setActivePage}
+          />
+        </li>
       </ul>
 
-      {/* Nav Right (Fav, Theme, Profile, Mobile Hamburger) */}
+      {/* Nav Right (Search, Profile, Fav, Theme, Mobile Hamburger) */}
       <div className="flex items-center gap-2.5">
+        {/* Profile / Login Icon (Placed between Search Bar and Favorites) */}
+        <button
+          onClick={() => setIsLoginModalOpen(true)}
+          className={`relative p-2.5 rounded-xl cursor-pointer transition-all duration-200 border flex items-center justify-center group ${
+            isLightTheme
+              ? "bg-slate-200/50 hover:bg-slate-200 border-slate-300/30 text-slate-700 hover:text-slate-900"
+              : "bg-white/5 hover:bg-white/10 border-white/10 text-slate-300 hover:text-white"
+          }`}
+          title="Trainer Login & Passport (Coming Soon)"
+        >
+          <User className="w-4.5 h-4.5 group-hover:scale-110 transition-transform" />
+          <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-amber-500 animate-pulse border border-slate-900" />
+        </button>
+
         <button
           onClick={() => handleNavClick("favorites")}
           className={`relative p-2.5 rounded-xl cursor-pointer transition-all duration-200 border flex items-center justify-center ${
@@ -161,6 +193,14 @@ export default function Navbar({
               : "bg-[#0F0F10]/95 border-white/5 text-[#F4F4F5]"
           }`}
         >
+          <div className="pb-2 border-b border-white/10 mb-1">
+            <GlobalSearchBar
+              isLightTheme={isLightTheme}
+              onSelectPokemonById={onSelectPokemonById}
+              onSelectRegion={onSelectRegion}
+              setActivePage={setActivePage}
+            />
+          </div>
           {navItems.map((item) => (
             <button
               key={item.id}
@@ -178,8 +218,36 @@ export default function Navbar({
               {item.label}
             </button>
           ))}
+
+          {/* Mobile Profile / Passport button */}
+          <button
+            onClick={() => {
+              setIsMobileMenuOpen(false);
+              setIsLoginModalOpen(true);
+            }}
+            className={`text-left px-4 py-2.5 rounded-xl cursor-pointer text-sm font-medium transition-all flex items-center justify-between mt-1 border ${
+              isLightTheme
+                ? "bg-amber-500/10 border-amber-500/20 text-amber-800"
+                : "bg-amber-500/10 border-amber-500/20 text-amber-400"
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <User className="w-4 h-4 text-amber-500" />
+              <span>Trainer Passport & Login</span>
+            </div>
+            <span className="text-[9px] font-mono font-black uppercase px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-500">
+              COMING SOON
+            </span>
+          </button>
         </div>
       )}
+
+      {/* Trainer Login / Passport Modal */}
+      <TrainerLoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        isLightTheme={isLightTheme}
+      />
     </nav>
   );
 }
